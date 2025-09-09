@@ -11,16 +11,16 @@ import java.net.Socket;
 public class Cliente2025 {
 
     public static void main(String[] args) {
-        try (Socket socket = new Socket("localhost", 8080);
+        try (Socket socket = new Socket("10.22.20.145", 8080);
              PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in))) {
 
             System.out.println("-------------------------------------");
             System.out.println("Bienvenido al Bulletin Board.");
-            System.out.println("Escriba 'Inicio' para iniciar sesión");
-            System.out.println("Escriba 'Registrar' para crear una cuenta");
-            System.out.println("Escriba 'Salir' para salir");
+            System.out.println("Si desea iniciar sesión escriba 'Inicio'");
+            System.out.println("Si desea registrar un nuevo usuario escriba 'Registrar'");
+            System.out.println("Si desea salir escriba 'Salir'");
             System.out.println("-------------------------------------");
 
             String opcion;
@@ -35,19 +35,17 @@ public class Cliente2025 {
                     break;
                 }
 
+                // Mostrar mensaje y manejar login/registro
                 System.out.println(respuesta);
 
                 if (opcion.equalsIgnoreCase("Inicio") || opcion.equalsIgnoreCase("Registrar")) {
-                    // Pedir usuario
                     String usuario = teclado.readLine();
                     escritor.println(usuario);
 
-                    // Pedir contraseña
                     System.out.println(lector.readLine());
                     String password = teclado.readLine();
                     escritor.println(password);
 
-                    // Resultado de login o registro
                     System.out.println(lector.readLine());
                 }
 
@@ -60,3 +58,4 @@ public class Cliente2025 {
         }
     }
 }
+
