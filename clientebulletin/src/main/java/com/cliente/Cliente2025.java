@@ -11,7 +11,7 @@ import java.net.Socket;
 public class Cliente2025 {
 
     public static void main(String[] args) {
-        try (Socket socket = new Socket("10.22.20.145", 8080);
+        try (Socket socket = new Socket("localhost", 8080);
              PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in))) {
@@ -50,7 +50,11 @@ public class Cliente2025 {
                 }
 
                 System.out.println("-------------------------------------");
-                System.out.println("Escriba otra opción: Inicio, Registrar o Salir");
+                System.out.println("Escriba otra opcion:");
+                System.out.println("Si desea iniciar sesión escriba 'Inicio'");
+                System.out.println("Si desea registrar un nuevo usuario escriba 'Registrar'");
+                System.out.println("Si desea salir escriba 'Salir'");
+                System.out.println("-------------------------------------");
             }
 
         } catch (IOException e) {
