@@ -29,50 +29,73 @@ public class Cliente2025 {
 
             while (true) {
                 if (!sesionIniciada) {
-                    opcion = teclado.readLine();
-                    escritor.println(opcion);
-                    String respuesta = lector.readLine();
-                    if (respuesta == null) break;
-
-                    if (respuesta.equalsIgnoreCase("FIN")) {
-                        System.out.println("Conexión cerrada por el servidor.");
-                        break;
-                    }
-
-                    System.out.println(respuesta);
-
-                    if (opcion.equalsIgnoreCase("Inicio")) {
-                        String usuario = teclado.readLine();
-                        escritor.println(usuario);
-
-                        System.out.println(lector.readLine());
-                        String password = teclado.readLine();
-                        escritor.println(password);
-
-                        String resultadoLogin = lector.readLine();
-                        System.out.println(resultadoLogin);
-
-                        if (resultadoLogin != null && resultadoLogin.startsWith("Inicio de sesión exitoso")) {
-                            sesionIniciada = true;
-                            usuarioActual = usuario;
-                        }
-                    } else if (opcion.equalsIgnoreCase("Registrar")) {
-                        String usuario = teclado.readLine();
-                        escritor.println(usuario);
-
-                        System.out.println(lector.readLine());
-                        String password = teclado.readLine();
-                        escritor.println(password);
-
-                        System.out.println(lector.readLine());
-                    }
-
                     System.out.println("-------------------------------------");
-                    System.out.println("Escriba otra opción:");
-                    System.out.println("Si desea iniciar sesión escriba 'Inicio'");
-                    System.out.println("Si desea registrar un nuevo usuario escriba 'Registrar'");
-                    System.out.println("Si desea salir escriba 'Salir'");
+                    System.out.println("Bienvenido al Bulletin Board, escriba una opción:");
+                    System.out.println("1. Iniciar sesión");
+                    System.out.println("2. Registrar nuevo usuario");
+                    System.out.println("3. Salir");
                     System.out.println("-------------------------------------");
+                    String opcionMenu = teclado.readLine();
+
+                    switch (opcionMenu) {
+                        case "1":
+                            escritor.println("Inicio");
+                            String respuestaInicio = lector.readLine();
+                            if (respuestaInicio == null) break;
+                            if (respuestaInicio.equalsIgnoreCase("FIN")) {
+                                System.out.println("Conexión cerrada por el servidor.");
+                                break;
+                            }
+                            System.out.println(respuestaInicio);
+
+                            String usuario = teclado.readLine();
+                            escritor.println(usuario);
+
+                            System.out.println(lector.readLine());
+                            String password = teclado.readLine();
+                            escritor.println(password);
+
+                            String resultadoLogin = lector.readLine();
+                            System.out.println(resultadoLogin);
+
+                            if (resultadoLogin != null && resultadoLogin.startsWith("Inicio de sesión exitoso")) {
+                                sesionIniciada = true;
+                                usuarioActual = usuario;
+                            }
+                            break;
+
+                        case "2":
+                            escritor.println("Registrar");
+                            String respuestaRegistrar = lector.readLine();
+                            if (respuestaRegistrar == null) break;
+                            if (respuestaRegistrar.equalsIgnoreCase("FIN")) {
+                                System.out.println("Conexión cerrada por el servidor.");
+                                break;
+                            }
+                            System.out.println(respuestaRegistrar);
+
+                            String nuevoUsuario = teclado.readLine();
+                            escritor.println(nuevoUsuario);
+
+                            System.out.println(lector.readLine());
+                            String nuevoPassword = teclado.readLine();
+                            escritor.println(nuevoPassword);
+
+                            System.out.println(lector.readLine());
+                            break;
+
+                        case "3":
+                            escritor.println("Salir");
+                            String respuestaSalir = lector.readLine();
+                            if (respuestaSalir != null && respuestaSalir.equalsIgnoreCase("FIN")) {
+                                System.out.println("Conexión cerrada por el servidor.");
+                            }
+                            return;
+
+                        default:
+                            System.out.println("Opción no válida. Intente de nuevo.");
+                            break;
+                    }
                 } else {
                     // Menu de navegacion tras login
                     System.out.println("------ Menú de usuario ------");
