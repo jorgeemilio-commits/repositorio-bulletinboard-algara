@@ -55,6 +55,20 @@ public class Servidor2025 {
 
                     escritor.println("Usuario " + nuevoUsuario + " registrado exitosamente con ID: " + nuevoId);
 
+                } else if (opcion.equalsIgnoreCase("VerUsuarios")) {
+                    List<String> usuarios = leerArchivoUsuarios();
+                    if (usuarios.isEmpty()) {
+                        escritor.println("No hay usuarios registrados.");
+                    } else {
+                        escritor.println("Usuarios registrados:");
+                        for (String linea : usuarios) {
+                            String[] partes = linea.split("\\|");
+                            if (partes.length >= 2) {
+                                escritor.println("- " + partes[1]);
+                            }
+                        }
+                        escritor.println("FIN_USUARIOS");
+                    }
                 } else if (opcion.equalsIgnoreCase("Salir")) {
                     escritor.println("FIN");
                     break;

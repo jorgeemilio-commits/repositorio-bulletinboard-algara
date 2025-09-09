@@ -109,8 +109,12 @@ public class Cliente2025 {
 
                     switch (opcionUsuario) {
                         case "1":
-                            System.out.println("Función placeholder: Mostrando usuarios registrados...");
-                            // usuuarios registrados
+                            escritor.println("VerUsuarios");
+                            String linea;
+                            while ((linea = lector.readLine()) != null) {
+                                if (linea.equals("FIN_USUARIOS")) break;
+                                System.out.println(linea);
+                            }
                             break;
                         case "2":
                             System.out.println("Función placeholder: Mostrando tu buzón de mensajes...");
