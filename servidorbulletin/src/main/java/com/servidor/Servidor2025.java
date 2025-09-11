@@ -162,11 +162,11 @@ public class Servidor2025 {
         return usuarios;
     }
 
-    private static void guardarMensaje(String destinatario, String mensaje) {
+    private static void guardarMensaje(String remitente, String destinatario, String mensaje) {
         File archivo = new File("buzon_" + destinatario + ".txt");
         try (FileWriter fw = new FileWriter(archivo, true);
              BufferedWriter bw = new BufferedWriter(fw)) {
-            bw.write(mensaje);
+            bw.write("[" + remitente + "]: " + mensaje);
             bw.newLine();
         } catch (IOException e) {
             System.out.println("Error al guardar mensaje: " + e.getMessage());
