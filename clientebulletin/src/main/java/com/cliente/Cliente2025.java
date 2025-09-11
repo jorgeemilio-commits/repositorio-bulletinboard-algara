@@ -125,8 +125,9 @@ public class Cliente2025 {
                                 System.out.println(mensaje);
                             }
                             break;
-                        case "3":
+                       case "3":
                             escritor.println("EnviarMensaje");
+                            escritor.println(usuarioActual); // <--- NUEVO: remitente
                             System.out.print("Ingrese el nombre del destinatario: ");
                             String destinatario = teclado.readLine();
                             escritor.println(destinatario);

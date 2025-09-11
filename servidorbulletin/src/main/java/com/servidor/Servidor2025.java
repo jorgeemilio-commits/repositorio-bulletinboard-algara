@@ -71,9 +71,10 @@ public class Servidor2025 {
                     }
 
                 } else if (opcion.equalsIgnoreCase("EnviarMensaje")) {
+                    String remitente = lectorSocket.readLine();
                     String destinatario = lectorSocket.readLine();
                     String mensaje = lectorSocket.readLine();
-                    guardarMensaje(destinatario, mensaje);
+                    guardarMensaje(remitente, destinatario, mensaje);
                     escritor.println("Mensaje enviado a " + destinatario);
 
                 } else if (opcion.equalsIgnoreCase("VerBuzon")) {
@@ -184,7 +185,7 @@ public class Servidor2025 {
             String linea;
             boolean hayMensajes = false;
             while ((linea = br.readLine()) != null) {
-                escritor.println("- " + linea);
+                escritor.println(linea);
                 hayMensajes = true;
             }
             if (!hayMensajes) {
