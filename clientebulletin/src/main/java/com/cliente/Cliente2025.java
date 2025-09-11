@@ -15,26 +15,26 @@ public class Cliente2025 {
              PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in))) {
-
+            /*
             System.out.println("-------------------------------------");
             System.out.println("Bienvenido al Bulletin Board.");
             System.out.println("Si desea iniciar sesión escriba 'Inicio'");
             System.out.println("Si desea registrar un nuevo usuario escriba 'Registrar'");
             System.out.println("Si desea salir escriba 'Salir'");
             System.out.println("-------------------------------------");
-
+            */
             String opcion;
             boolean sesionIniciada = false;
             String usuarioActual = "";
 
             while (true) {
                 if (!sesionIniciada) {
-                    System.out.println("-------------------------------------");
+                    System.out.println("-------------------------------------------------");
                     System.out.println("Bienvenido al Bulletin Board, escriba una opción:");
                     System.out.println("1. Iniciar sesión");
                     System.out.println("2. Registrar nuevo usuario");
                     System.out.println("3. Salir");
-                    System.out.println("-------------------------------------");
+                    System.out.println("-------------------------------------------------");
                     String opcionMenu = teclado.readLine();
 
                     switch (opcionMenu) {
@@ -98,12 +98,12 @@ public class Cliente2025 {
                     }
                 } else {
                     // Menu de navegacion tras login
-                    System.out.println("------ Menú de usuario ------");
+                    System.out.println("------ Menú de usuario "+ usuarioActual +" ------");
                     System.out.println("1. Ver todos los usuarios registrados");
                     System.out.println("2. Ver tu buzón de mensajes");
                     System.out.println("3. Enviar un mensaje a un usuario");
                     System.out.println("4. Cerrar sesión");
-                    System.out.println("-----------------------------");
+                    System.out.println("--------------------------------------------------");
                     System.out.print("Seleccione una opción: ");
                     String opcionUsuario = teclado.readLine();
 
@@ -121,13 +121,23 @@ public class Cliente2025 {
                             // buzon de mensajes
                             break;
                         case "3":
-                            System.out.println("Función placeholder: Enviando mensaje a usuario...");
-                            // enviar mensaje
+                            escritor.println("VerBuzon");
+                            escritor.println(usuarioActual);
+                            String mensaje;
+                            while ((mensaje = lector.readLine()) != null) {
+                                if (mensaje.equals("FIN_BUZON")) break;
+                                System.out.println(mensaje);
+                            }
                             break;
                         case "4":
-                            sesionIniciada = false;
-                            usuarioActual = "";
-                            System.out.println("Sesión cerrada. Regresando al menú principal.");
+                            escritor.println("EnviarMensaje");
+                            System.out.print("Ingrese el nombre del destinatario: ");
+                            String destinatario = teclado.readLine();
+                            escritor.println(destinatario);
+                            System.out.print("Escriba el mensaje: ");
+                            String mensajeEnviar = teclado.readLine();
+                            escritor.println(mensajeEnviar);
+                            System.out.println(lector.readLine()); // confirmación
                             break;
                         default:
                             System.out.println("Opción no válida. Intente de nuevo.");
