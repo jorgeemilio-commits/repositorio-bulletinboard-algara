@@ -117,10 +117,6 @@ public class Cliente2025 {
                             }
                             break;
                         case "2":
-                            System.out.println("Función placeholder: Mostrando tu buzón de mensajes...");
-                            // buzon de mensajes
-                            break;
-                        case "3":
                             escritor.println("VerBuzon");
                             escritor.println(usuarioActual);
                             String mensaje;
@@ -129,7 +125,7 @@ public class Cliente2025 {
                                 System.out.println(mensaje);
                             }
                             break;
-                        case "4":
+                        case "3":
                             escritor.println("EnviarMensaje");
                             System.out.print("Ingrese el nombre del destinatario: ");
                             String destinatario = teclado.readLine();
@@ -138,6 +134,11 @@ public class Cliente2025 {
                             String mensajeEnviar = teclado.readLine();
                             escritor.println(mensajeEnviar);
                             System.out.println(lector.readLine()); // confirmación
+                            break;
+                        case "4":
+                            sesionIniciada = false;
+                            usuarioActual = "";
+                            System.out.println("Sesión cerrada. Regresando al menú principal.");
                             break;
                         default:
                             System.out.println("Opción no válida. Intente de nuevo.");
