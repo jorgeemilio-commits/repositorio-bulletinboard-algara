@@ -69,9 +69,21 @@ public class Servidor2025 {
                         }
                         escritor.println("FIN_USUARIOS");
                     }
+
+                } else if (opcion.equalsIgnoreCase("EnviarMensaje")) {
+                    String destinatario = lectorSocket.readLine();
+                    String mensaje = lectorSocket.readLine();
+                    guardarMensaje(destinatario, mensaje);
+                    escritor.println("Mensaje enviado a " + destinatario);
+
+                } else if (opcion.equalsIgnoreCase("VerBuzon")) {
+                    String usuario = lectorSocket.readLine();
+                    enviarBuzon(usuario, escritor);
+
                 } else if (opcion.equalsIgnoreCase("Salir")) {
                     escritor.println("FIN");
                     break;
+
                 } else {
                     escritor.println("Opción no válida. Escriba Inicio, Registrar o Salir.");
                 }
@@ -148,5 +160,39 @@ public class Servidor2025 {
             System.out.println("Error al leer el archivo de usuarios.");
         }
         return usuarios;
+    }
+
+    private static void guardarMensaje(String destinatario, String mensaje) {
+        File archivo = new File("buzon_" + destinatario + ".txt");
+        try (FileWriter fw = new FileWriter(archivo, true);
+             BufferedWriter bw = new BufferedWriter(fw)) {
+            bw.write(mensaje);
+            bw.newLine();
+        } catch (IOException e) {
+            System.out.println("Error al guardar mensaje: " + e.getMessage());
+        }
+    }
+
+    private static void enviarBuzon(String usuario, PrintWriter escritor) {
+        File archivo = new File("buzon_" + usuario + ".txt");
+        if (!archivo.exists()) {
+            escritor.println("No tienes mensajes en tu buzón.");
+            escritor.println("FIN_BUZON");
+            return;
+        }
+        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            boolean hayMensajes = false;
+            while ((linea = br.readLine()) != null) {
+                escritor.println("- " + linea);
+                hayMensajes = true;
+            }
+            if (!hayMensajes) {
+                escritor.println("No tienes mensajes en tu buzón.");
+            }
+        } catch (IOException e) {
+            escritor.println("Error al leer tu buzón.");
+        }
+        escritor.println("FIN_BUZON");
     }
 }
