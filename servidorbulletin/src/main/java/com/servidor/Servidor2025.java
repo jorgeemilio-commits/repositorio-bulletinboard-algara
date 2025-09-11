@@ -71,11 +71,27 @@ public class Servidor2025 {
                     }
 
                 } else if (opcion.equalsIgnoreCase("EnviarMensaje")) {
-                    String remitente = lectorSocket.readLine();
-                    String destinatario = lectorSocket.readLine();
-                    String mensaje = lectorSocket.readLine();
-                    guardarMensaje(remitente, destinatario, mensaje);
-                    escritor.println("Mensaje enviado a " + destinatario);
+                   String remitente = lectorSocket.readLine();
+                   String destinatario = lectorSocket.readLine();
+                   String mensaje = lectorSocket.readLine();
+
+                   boolean existeDestinatario = false;
+                   List<String> usuarios = leerArchivoUsuarios();
+                   for (String linea : usuarios) {
+                   String[] partes = linea.split("\\|");
+                   if (partes.length >= 2 && partes[1].equalsIgnoreCase(destinatario)) {
+                   existeDestinatario = true;
+                   break;
+        }
+    }
+
+    if (!existeDestinatario) {
+        escritor.println("Error: El usuario '" + destinatario + "' no existe.");
+    } else {
+        guardarMensaje(remitente, destinatario, mensaje);
+        escritor.println("Mensaje enviado a " + destinatario);
+    }
+
 
                 } else if (opcion.equalsIgnoreCase("VerBuzon")) {
                     String usuario = lectorSocket.readLine();
