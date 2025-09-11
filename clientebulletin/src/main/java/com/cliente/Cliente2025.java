@@ -15,15 +15,7 @@ public class Cliente2025 {
              PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in))) {
-            /*
-            System.out.println("-------------------------------------");
-            System.out.println("Bienvenido al Bulletin Board.");
-            System.out.println("Si desea iniciar sesión escriba 'Inicio'");
-            System.out.println("Si desea registrar un nuevo usuario escriba 'Registrar'");
-            System.out.println("Si desea salir escriba 'Salir'");
-            System.out.println("-------------------------------------");
-            */
-            String opcion;
+
             boolean sesionIniciada = false;
             String usuarioActual = "";
 
@@ -39,6 +31,7 @@ public class Cliente2025 {
 
                     switch (opcionMenu) {
                         case "1":
+                        //opcion para iniciar sesion
                             escritor.println("Inicio");
                             String respuestaInicio = lector.readLine();
                             if (respuestaInicio == null) break;
@@ -65,6 +58,7 @@ public class Cliente2025 {
                             break;
 
                         case "2":
+                        //opcion para registrar usuario nuevo
                             escritor.println("Registrar");
                             String respuestaRegistrar = lector.readLine();
                             if (respuestaRegistrar == null) break;
@@ -85,6 +79,7 @@ public class Cliente2025 {
                             break;
 
                         case "3":
+                        //opcion para salir
                             escritor.println("Salir");
                             String respuestaSalir = lector.readLine();
                             if (respuestaSalir != null && respuestaSalir.equalsIgnoreCase("FIN")) {
@@ -109,6 +104,7 @@ public class Cliente2025 {
 
                     switch (opcionUsuario) {
                         case "1":
+                        //opcion para ver todos los usuarios
                             escritor.println("VerUsuarios");
                             String linea;
                             while ((linea = lector.readLine()) != null) {
@@ -117,6 +113,7 @@ public class Cliente2025 {
                             }
                             break;
                         case "2":
+                        //opcion para ver el buzon
                             escritor.println("VerBuzon");
                             escritor.println(usuarioActual);
                             String mensaje;
@@ -126,17 +123,22 @@ public class Cliente2025 {
                             }
                             break;
                        case "3":
+                       //opcion para enviar un mensaje
                             escritor.println("EnviarMensaje");
-                            escritor.println(usuarioActual); // <--- NUEVO: remitente
+                            //quien envia el mensaje
+                            escritor.println(usuarioActual); 
                             System.out.print("Ingrese el nombre del destinatario: ");
                             String destinatario = teclado.readLine();
+                            //a quien va dirigido el mensaje
                             escritor.println(destinatario);
                             System.out.print("Escriba el mensaje: ");
                             String mensajeEnviar = teclado.readLine();
+                            //el mensaje a enviar
                             escritor.println(mensajeEnviar);
-                            System.out.println(lector.readLine()); // confirmación
+                            System.out.println(lector.readLine()); 
                             break;
                         case "4":
+                        //opcion para cerrar sesion y regresar al menu principal
                             sesionIniciada = false;
                             usuarioActual = "";
                             System.out.println("Sesión cerrada. Regresando al menú principal.");

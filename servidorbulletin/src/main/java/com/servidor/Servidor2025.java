@@ -32,6 +32,7 @@ public class Servidor2025 {
         ) {
             String opcion;
             while ((opcion = lectorSocket.readLine()) != null) {
+                //procesa la opcion recibida
                 if (opcion.equalsIgnoreCase("Inicio")) {
                     escritor.println("Ingrese su nombre de usuario:");
                     String usuario = lectorSocket.readLine();
@@ -43,10 +44,24 @@ public class Servidor2025 {
                     } else {
                         escritor.println("Usuario o contraseña incorrectos.");
                     }
-
-                } else if (opcion.equalsIgnoreCase("Registrar")) {
+                }
+                else if (opcion.equalsIgnoreCase("Registrar")) {
                     escritor.println("Ingrese un nombre de usuario para registrar:");
-                    String nuevoUsuario = lectorSocket.readLine();
+                     String nuevoUsuario = lectorSocket.readLine();
+
+                     boolean existeUsuario = false;
+                     List<String> usuarios = leerArchivoUsuarios();
+                     for (String linea : usuarios) {
+                     String[] partes = linea.split("\\|");
+                     if (partes.length >= 2 && partes[1].equalsIgnoreCase(nuevoUsuario)) {
+                     existeUsuario = true;
+                     break;
+                        }
+                    }
+
+                    if (existeUsuario) {
+                    escritor.println("Error: El usuario '" + nuevoUsuario + "' ya existe. Intente con otro nombre.");
+                    } else {
                     escritor.println("Ingrese una contraseña:");
                     String nuevoPassword = lectorSocket.readLine();
 
@@ -54,6 +69,7 @@ public class Servidor2025 {
                     registrarUsuario(nuevoId, nuevoUsuario, nuevoPassword);
 
                     escritor.println("Usuario " + nuevoUsuario + " registrado exitosamente con ID: " + nuevoId);
+                 }
 
                 } else if (opcion.equalsIgnoreCase("VerUsuarios")) {
                     List<String> usuarios = leerArchivoUsuarios();
@@ -118,6 +134,7 @@ public class Servidor2025 {
         }
     }
 
+    //codigo para validar usuario
     private static boolean validarUsuario(String usuario, String password) {
         List<String> usuarios = leerArchivoUsuarios();
         for (String linea : usuarios) {
@@ -133,6 +150,7 @@ public class Servidor2025 {
         return false;
     }
 
+    //codigo para registrar usuario nuevo
     private static void registrarUsuario(int id, String nombre, String password) {
         try (FileWriter fw = new FileWriter(ARCHIVO_USUARIOS, true);
              BufferedWriter bw = new BufferedWriter(fw)) {
@@ -143,6 +161,7 @@ public class Servidor2025 {
         }
     }
 
+    //codigo para obtener el siguiente ID disponible
     private static int obtenerSiguienteId() {
         List<String> usuarios = leerArchivoUsuarios();
         int maxId = 0;
@@ -158,6 +177,7 @@ public class Servidor2025 {
         return maxId + 1;
     }
 
+    //codigo para leer archivo de usuarios
     private static List<String> leerArchivoUsuarios() {
         List<String> usuarios = new ArrayList<>();
         File archivo = new File(ARCHIVO_USUARIOS);
@@ -179,6 +199,7 @@ public class Servidor2025 {
         return usuarios;
     }
 
+    //codigo para guardar mensaje en el buzon del destinatario
     private static void guardarMensaje(String remitente, String destinatario, String mensaje) {
         File archivo = new File("buzon_" + destinatario + ".txt");
         try (FileWriter fw = new FileWriter(archivo, true);
@@ -190,6 +211,7 @@ public class Servidor2025 {
         }
     }
 
+    //codigo para enviar el buzon al usuario que lo solicito
     private static void enviarBuzon(String usuario, PrintWriter escritor) {
         File archivo = new File("buzon_" + usuario + ".txt");
         if (!archivo.exists()) {
