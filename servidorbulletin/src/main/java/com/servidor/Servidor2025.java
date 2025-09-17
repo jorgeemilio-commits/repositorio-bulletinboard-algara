@@ -115,7 +115,7 @@ public class Servidor2025 {
 
                 } else if (opcion.equalsIgnoreCase("BorrarBuzon")) {
                     String usuario = lectorSocket.readLine();
-                    enviarBuzon(usuario, escritor);
+                    borrarBuzon(usuario, escritor);
 
                 } else if (opcion.equalsIgnoreCase("Salir")) {
                     escritor.println("FIN");
@@ -238,4 +238,21 @@ public class Servidor2025 {
         }
         escritor.println("FIN_BUZON");
     }
+
+
+    //codigo para borrar el buzon del usuario que lo solicito
+    private static void borrarBuzon(String usuario, PrintWriter escritor) {
+    File archivo = new File("buzon_" + usuario + ".txt");
+    if (!archivo.exists()) {
+        escritor.println("No tienes buzón para borrar.");
+        return;
+    }
+
+    if (archivo.delete()) {
+        escritor.println("Buzón borrado exitosamente.");
+    } else {
+        escritor.println("Error al borrar el buzón.");
+    }
+}
+     
 }
