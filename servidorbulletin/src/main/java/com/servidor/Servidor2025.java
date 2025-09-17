@@ -113,6 +113,10 @@ public class Servidor2025 {
                     String usuario = lectorSocket.readLine();
                     enviarBuzon(usuario, escritor);
 
+                } else if (opcion.equalsIgnoreCase("BorrarBuzon")) {
+                    String usuario = lectorSocket.readLine();
+                    enviarBuzon(usuario, escritor);
+
                 } else if (opcion.equalsIgnoreCase("Salir")) {
                     escritor.println("FIN");
                     break;
