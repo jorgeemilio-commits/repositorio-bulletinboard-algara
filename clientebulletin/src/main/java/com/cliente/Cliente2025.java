@@ -98,6 +98,7 @@ public class Cliente2025 {
                     System.out.println("2. Ver tu buzón de mensajes");
                     System.out.println("3. Enviar un mensaje a un usuario");
                     System.out.println("4. Cerrar sesión");
+                    System.out.println("5. Borrar buzón de mensajes");
                     System.out.println("--------------------------------------------------");
                     System.out.print("Seleccione una opción: ");
                     String opcionUsuario = teclado.readLine();
