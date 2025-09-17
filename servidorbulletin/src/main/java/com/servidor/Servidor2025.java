@@ -117,6 +117,12 @@ public class Servidor2025 {
                     String usuario = lectorSocket.readLine();
                     borrarBuzon(usuario, escritor);
 
+                } else if (opcion.equalsIgnoreCase("BorrarMensaje")) {
+                    String usuarioActual = lectorSocket.readLine(); // quien borra
+                    String usuarioB = lectorSocket.readLine(); // a quien se lo borra
+                    borrarMensaje(usuarioActual, usuarioB, lectorSocket, escritor);
+}    
+
                 } else if (opcion.equalsIgnoreCase("Salir")) {
                     escritor.println("FIN");
                     break;
@@ -255,4 +261,78 @@ public class Servidor2025 {
     }
 }
      
+private static void borrarMensaje(String usuarioActual, String usuarioB, BufferedReader lectorSocket, PrintWriter escritor) throws IOException {
+    File archivoBuzon = new File("buzon_" + usuarioB + ".txt");
+    if (!archivoBuzon.exists()) {
+        escritor.println("El usuario " + usuarioB + " no tiene buzón.");
+        return;
+    }
+
+    // Leer todos los mensajes del buzón
+    List<String> mensajes = new ArrayList<>();
+    try (BufferedReader br = new BufferedReader(new FileReader(archivoBuzon))) {
+        String linea;
+        while ((linea = br.readLine()) != null) {
+            mensajes.add(linea);
+        }
+    }
+
+    // Filtrar mensajes enviados por usuarioActual
+    List<Integer> indices = new ArrayList<>();
+    for (int i = 0; i < mensajes.size(); i++) {
+        String msg = mensajes.get(i);
+        if (msg.startsWith(usuarioActual + ":")) { 
+            indices.add(i);
+        }
+    }
+
+    if (indices.isEmpty()) {
+        escritor.println("No tienes mensajes enviados a " + usuarioB);
+        return;
+    }
+
+    boolean continuar = true;
+    while (continuar) {
+        // Mostrar mensajes numerados
+        escritor.println("=== Mensajes enviados a " + usuarioB + " ===");
+        for (int i = 0; i < indices.size(); i++) {
+            escritor.println((i + 1) + ". " + mensajes.get(indices.get(i)));
+        }
+        escritor.println("0. Salir");
+
+        escritor.flush();
+
+        String opcion = lectorSocket.readLine();
+        if (opcion == null || opcion.equals("0")) {
+            continuar = false;
+            escritor.println("Regresando al menú principal...");
+        } else {
+            try {
+                int numero = Integer.parseInt(opcion);
+                if (numero >= 1 && numero <= indices.size()) {
+                    int idx = indices.get(numero - 1);
+                    mensajes.remove(idx);
+                    // Actualizar indices para que correspondan a la lista modificada
+                    indices.remove(numero - 1);
+                    for (int j = 0; j < indices.size(); j++) {
+                        if (indices.get(j) > idx) {
+                            indices.set(j, indices.get(j) - 1);
+                        }
+                    }
+                    // Reescribir archivo con los mensajes restantes
+                    try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBuzon))) {
+                        for (String m : mensajes) pw.println(m);
+                    }
+                    escritor.println("Mensaje borrado con éxito.");
+                } else {
+                    escritor.println("Número inválido.");
+                }
+            } catch (NumberFormatException e) {
+                escritor.println("Entrada inválida, escribe un número.");
+            }
+        }
+    }
 }
+
+
+

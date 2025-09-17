@@ -144,12 +144,20 @@ public class Cliente2025 {
                             usuarioActual = "";
                             System.out.println("Sesión cerrada. Regresando al menú principal.");
                             break;
-                        case"5":
+                        case "5":
                          //opcion para borrar buzon
                             escritor.println("BorrarBuzon");
                             escritor.println(usuarioActual);
                             System.out.println(lector.readLine());
                         break;
+                        case "6":
+                            //opcion para borrar un mensaje especifico
+                            System.out.print("Ingrese el nombre del usuario al que vas a borrar tu mensaje: ");
+                            String usuarioB = teclado.readLine();
+                            escritor.println(usuarioActual);
+                            escritor.println("BorrarMensaje");
+                            System.out.println(lector.readLine());
+                        break;                   
                         default:
                             System.out.println("Opción no válida. Intente de nuevo.");
                     }
