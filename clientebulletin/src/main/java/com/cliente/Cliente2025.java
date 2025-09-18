@@ -100,6 +100,7 @@ public class Cliente2025 {
                     System.out.println("4. Cerrar sesión");
                     System.out.println("5. Borrar buzón de mensajes");
                     System.out.println("6. Borrar un mensaje específico");
+                    System.out.println("7. Darse de baja (eliminar cuenta)");
                     System.out.println("--------------------------------------------------");
                     System.out.print("Seleccione una opción: ");
                     String opcionUsuario = teclado.readLine();
@@ -180,7 +181,24 @@ public class Cliente2025 {
                         break; // Salir del bucle
                         }
                     }
-                    break;  
+                    break;
+                    case "7":
+                    //opcion para darse de baja
+                     System.out.print("¿Estás seguro de que deseas darte de baja? Esto borrará tu cuenta y tu buzón. (S/N): ");
+                     String confirmacion = teclado.readLine();
+                     if (confirmacion.equalsIgnoreCase("S")) {
+                        escritor.println("BorrarUsuario");
+                        escritor.println(usuarioActual);
+                        String respuestaBorrado = lector.readLine();
+                        System.out.println(respuestaBorrado);
+                        if (respuestaBorrado.contains("exitosa")) {
+                            sesionIniciada = false;
+                            usuarioActual = "";
+                        }
+                    } else {
+                        System.out.println("Operación cancelada.");
+                    }
+                break;
                         default:
                             System.out.println("Opción no válida. Intente de nuevo.");
                     }
