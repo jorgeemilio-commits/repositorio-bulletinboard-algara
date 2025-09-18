@@ -117,6 +117,10 @@ public class Servidor2025 {
                     String usuario = lectorSocket.readLine();
                     borrarBuzon(usuario, escritor);
 
+                } else if (opcion.equalsIgnoreCase("BorrarUsuario")) {
+                    String usuarioABorrar = lectorSocket.readLine();
+                    borrarUsuario(usuarioABorrar, escritor);
+
                 } else if (opcion.equalsIgnoreCase("BorrarMensaje")) {
                     String usuarioActual = lectorSocket.readLine(); // quien borra
                     String usuarioB = lectorSocket.readLine(); // a quien se lo borra
@@ -319,6 +323,59 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
             escritor.println("Entrada inválida, escribe un número.");
         }
     }
+}
+
+// codigo para borrar un usuario y su buzón
+private static void borrarUsuario(String usuario, PrintWriter escritor) {
+    // borra el usuario del archivo de usuarios
+    File archivoUsuarios = new File(ARCHIVO_USUARIOS);
+    File archivoTemp = new File("temp_usuarios.txt");
+
+    try (BufferedReader br = new BufferedReader(new FileReader(archivoUsuarios));
+         BufferedWriter bw = new BufferedWriter(new FileWriter(archivoTemp))) {
+        String linea;
+        boolean usuarioEncontrado = false;
+        while ((linea = br.readLine()) != null) {
+            String[] partes = linea.split("\\|");
+            if (partes.length >= 2 && partes[1].equalsIgnoreCase(usuario)) {
+                usuarioEncontrado = true;
+            } else {
+                bw.write(linea);
+                bw.newLine();
+            }
+        }
+        
+        if (!usuarioEncontrado) {
+            escritor.println("Error: El usuario no fue encontrado.");
+            return;
+        }
+
+    } catch (IOException e) {
+        escritor.println("Error al procesar la solicitud de borrado del usuario.");
+        return;
+    }
+
+    // reescribe el archivo original
+    if (!archivoUsuarios.delete()) {
+        escritor.println("Error al borrar el archivo de usuarios original.");
+        return;
+    }
+    if (!archivoTemp.renameTo(archivoUsuarios)) {
+        escritor.println("Error al renombrar el archivo temporal.");
+        return;
+    }
+
+    // borra el buzón del usuario
+    File archivoBuzon = new File("buzon_" + usuario + ".txt");
+    if (archivoBuzon.exists()) {
+        if (archivoBuzon.delete()) {
+            System.out.println("Buzón de " + usuario + " borrado.");
+        } else {
+            System.out.println("Error al borrar el buzón de " + usuario + ".");
+        }
+    }
+
+    escritor.println("Cuenta de usuario y buzón borrados exitosamente.");
 }
 
 }
