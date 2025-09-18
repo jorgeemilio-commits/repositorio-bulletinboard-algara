@@ -260,6 +260,7 @@ public class Servidor2025 {
     }
 }
      
+// codigo para borrar un mensaje especifico enviado a otro usuario
 private static void borrarMensaje(String usuarioActual, String usuarioB, BufferedReader lectorSocket, PrintWriter escritor) throws IOException {
     File archivoBuzon = new File("buzon_" + usuarioB + ".txt");
     if (!archivoBuzon.exists()) {
@@ -267,7 +268,6 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
         return;
     }
 
-    // Leer todos los mensajes del buzón
     List<String> mensajes = new ArrayList<>();
     try (BufferedReader br = new BufferedReader(new FileReader(archivoBuzon))) {
         String linea;
@@ -276,7 +276,6 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
         }
     }
 
-    // Filtrar mensajes enviados por usuarioActual
     List<Integer> indices = new ArrayList<>();
     for (int i = 0; i < mensajes.size(); i++) {
         String msg = mensajes.get(i);
@@ -289,46 +288,35 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
         escritor.println("No tienes mensajes enviados a " + usuarioB);
         return;
     }
-
-    boolean continuar = true;
-    while (continuar) {
-        // Mostrar mensajes numerados
-        escritor.println("=== Mensajes enviados a " + usuarioB + " ===");
-        for (int i = 0; i < indices.size(); i++) {
-            escritor.println((i + 1) + ". " + mensajes.get(indices.get(i)));
-        }
-        escritor.println("0. Salir");
-
-        escritor.flush();
-
-        String opcion = lectorSocket.readLine();
-        if (opcion == null || opcion.equals("0")) {
-            continuar = false;
-            escritor.println("Regresando al menú principal...");
-        } else {
-            try {
-                int numero = Integer.parseInt(opcion);
-                if (numero >= 1 && numero <= indices.size()) {
-                    int idx = indices.get(numero - 1);
-                    mensajes.remove(idx);
-                    // Actualizar indices para que correspondan a la lista modificada
-                    indices.remove(numero - 1);
-                    for (int j = 0; j < indices.size(); j++) {
-                        if (indices.get(j) > idx) {
-                            indices.set(j, indices.get(j) - 1);
-                        }
-                    }
-                    // Reescribir archivo con los mensajes restantes
-                    try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBuzon))) {
-                        for (String m : mensajes) pw.println(m);
-                    }
-                    escritor.println("Mensaje borrado con éxito.");
-                } else {
-                    escritor.println("Número inválido.");
+    
+    // Envia la lista de mensajes al cliente
+    escritor.println("=== Mensajes enviados a " + usuarioB + " ===");
+    for (int i = 0; i < indices.size(); i++) {
+        escritor.println((i + 1) + ". " + mensajes.get(indices.get(i)));
+    }
+    escritor.println("0. Salir");
+    escritor.println("FIN_MENSAJES"); // Señal para que el cliente pida la opción
+    
+    String opcion = lectorSocket.readLine();
+    if (opcion == null || opcion.equals("0")) {
+        escritor.println("Regresando al menú principal...");
+    } else {
+        try {
+            int numero = Integer.parseInt(opcion);
+            if (numero >= 1 && numero <= indices.size()) {
+                int idx = indices.get(numero - 1);
+                mensajes.remove(idx);
+                
+                // Reescribe el archivo con los mensajes restantes
+                try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBuzon))) {
+                    for (String m : mensajes) pw.println(m);
                 }
-            } catch (NumberFormatException e) {
-                escritor.println("Entrada inválida, escribe un número.");
+                escritor.println("Mensaje borrado con éxito.");
+            } else {
+                escritor.println("Número inválido.");
             }
+        } catch (NumberFormatException e) {
+            escritor.println("Entrada inválida, escribe un número.");
         }
     }
 }
