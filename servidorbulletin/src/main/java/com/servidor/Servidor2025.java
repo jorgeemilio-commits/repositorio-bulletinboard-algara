@@ -120,15 +120,14 @@ public class Servidor2025 {
                 } else if (opcion.equalsIgnoreCase("BorrarMensaje")) {
                     String usuarioActual = lectorSocket.readLine(); // quien borra
                     String usuarioB = lectorSocket.readLine(); // a quien se lo borra
-                    borrarMensaje(usuarioActual, usuarioB, lectorSocket, escritor);
-}    
+                    borrarMensaje(usuarioActual, usuarioB, lectorSocket, escritor);    
 
                 } else if (opcion.equalsIgnoreCase("Salir")) {
                     escritor.println("FIN");
                     break;
 
                 } else {
-                    escritor.println("Opción no válida. Escriba Inicio, Registrar o Salir.");
+                    escritor.println("Opción no válida. Intente de nuevo.");
                 }
             }
 
@@ -281,7 +280,7 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
     List<Integer> indices = new ArrayList<>();
     for (int i = 0; i < mensajes.size(); i++) {
         String msg = mensajes.get(i);
-        if (msg.startsWith(usuarioActual + ":")) { 
+        if (msg.startsWith("[" + usuarioActual + "]:")) { 
             indices.add(i);
         }
     }
@@ -332,6 +331,8 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
             }
         }
     }
+}
+
 }
 
 

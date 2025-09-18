@@ -154,10 +154,21 @@ public class Cliente2025 {
                             //opcion para borrar un mensaje especifico
                             System.out.print("Ingrese el nombre del usuario al que vas a borrar tu mensaje: ");
                             String usuarioB = teclado.readLine();
-                            escritor.println(usuarioActual);
-                            escritor.println("BorrarMensaje");
-                            System.out.println(lector.readLine());
-                        break;                   
+
+                            escritor.println("BorrarMensaje"); 
+                            escritor.println(usuarioActual);    
+                            escritor.println(usuarioB);          
+
+                          String respuesta;
+                          while (!(respuesta = lector.readLine()).equals("Regresando al menú principal...")) {
+                             System.out.println(respuesta);
+                             if (respuesta.startsWith("===") || respuesta.startsWith("0.")) {
+                               System.out.print("Selecciona un mensaje para borrar (o 0 para salir): ");
+                               escritor.println(teclado.readLine()); // manda la opcion seleccionada al servidor
+                            }
+                    }
+                        System.out.println(respuesta); // imprime el mensaje final
+                        break;           
                         default:
                             System.out.println("Opción no válida. Intente de nuevo.");
                     }
