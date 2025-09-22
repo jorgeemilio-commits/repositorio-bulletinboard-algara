@@ -111,8 +111,15 @@ public class Servidor2025 {
 
                 } else if (opcion.equalsIgnoreCase("VerBuzon")) {
                     String usuario = lectorSocket.readLine();
-                    enviarBuzon(usuario, escritor);
-
+                    // El cliente ahora enviará la página solicitada
+                    String paginaStr = lectorSocket.readLine();
+                    int paginaActual = 1; // Página por defecto
+                    try {
+                        paginaActual = Integer.parseInt(paginaStr);
+                    } catch (NumberFormatException e) {
+                        System.out.println("Página inválida recibida del cliente, usando página 1.");
+                    }
+                    enviarBuzon(usuario, paginaActual, escritor); // Llamada actualizada
                 } else if (opcion.equalsIgnoreCase("BorrarBuzon")) {
                     String usuario = lectorSocket.readLine();
                     borrarBuzon(usuario, escritor);
@@ -224,30 +231,57 @@ public class Servidor2025 {
         }
     }
 
-    //codigo para enviar el buzon al usuario que lo solicito
-    private static void enviarBuzon(String usuario, PrintWriter escritor) {
+    //codigo para enviar el buzon al usuario que lo solicito con paginación
+    private static void enviarBuzon(String usuario, int paginaActual, PrintWriter escritor) {
         File archivo = new File("buzon_" + usuario + ".txt");
         if (!archivo.exists()) {
             escritor.println("No tienes mensajes en tu buzón.");
-            escritor.println("FIN_BUZON");
+            escritor.println("FIN_BUZON"); // Señal de fin
             return;
         }
+
+        List<String> todosLosMensajes = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
             String linea;
-            boolean hayMensajes = false;
             while ((linea = br.readLine()) != null) {
-                escritor.println(linea);
-                hayMensajes = true;
-            }
-            if (!hayMensajes) {
-                escritor.println("No tienes mensajes en tu buzón.");
+                todosLosMensajes.add(linea);
             }
         } catch (IOException e) {
             escritor.println("Error al leer tu buzón.");
+            escritor.println("FIN_BUZON"); // Señal de fin
+            return;
         }
-        escritor.println("FIN_BUZON");
-    }
 
+        if (todosLosMensajes.isEmpty()) {
+            escritor.println("No tienes mensajes en tu buzón.");
+            escritor.println("FIN_BUZON"); // Señal de fin
+            return;
+        }
+
+        // Mostrar los mensajes más recientes primero
+        java.util.Collections.reverse(todosLosMensajes);
+
+        int mensajesPorPagina = 10;
+        int totalMensajes = todosLosMensajes.size();
+        int totalPaginas = (int) Math.ceil((double) totalMensajes / mensajesPorPagina);
+
+        // Asegurarse de que la página actual esté dentro de los límites
+        if (paginaActual < 1) paginaActual = 1;
+        if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+
+        int indiceInicio = (paginaActual - 1) * mensajesPorPagina;
+        int indiceFin = Math.min(indiceInicio + mensajesPorPagina, totalMensajes);
+
+        // Enviar información de paginación al cliente
+        escritor.println("PAGINACION_INFO:" + paginaActual + "/" + totalPaginas); 
+
+        // Enviar los mensajes de la página actual
+        for (int i = indiceInicio; i < indiceFin; i++) {
+            escritor.println(todosLosMensajes.get(i));
+        }
+
+        escritor.println("FIN_BUZON"); // Señal de fin de mensajes de la página
+    }
 
     //codigo para borrar el buzon del usuario que lo solicito
     private static void borrarBuzon(String usuario, PrintWriter escritor) {

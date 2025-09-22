@@ -116,13 +116,65 @@ public class Cliente2025 {
                             }
                             break;
                         case "2":
-                        //opcion para ver el buzon
-                            escritor.println("VerBuzon");
-                            escritor.println(usuarioActual);
-                            String mensaje;
-                            while ((mensaje = lector.readLine()) != null) {
-                                if (mensaje.equals("FIN_BUZON")) break;
-                                System.out.println(mensaje);
+                        //opcion para ver el buzon con paginación
+                            int paginaActual = 1;
+                            boolean continuarBuzon = true;
+
+                            while (continuarBuzon) {
+                                escritor.println("VerBuzon");
+                                escritor.println(usuarioActual);
+                                escritor.println(String.valueOf(paginaActual)); // Enviar la página solicitada
+
+                                String infoPaginacion = lector.readLine();
+                                if (infoPaginacion == null) {
+                                    System.out.println("Error al recibir información del servidor.");
+                                    break;
+                                }
+
+                                // Si no hay mensajes, el servidor envía este mensaje directamente
+                                if (infoPaginacion.startsWith("No tienes mensajes en tu buzón.")) {
+                                    System.out.println(infoPaginacion);
+                                    lector.readLine(); // Consumir la señal FIN_BUZON
+                                    continuarBuzon = false;
+                                    break;
+                                }
+                                
+                                // Si el servidor envía información de paginación
+                                if (infoPaginacion.startsWith("PAGINACION_INFO:")) {
+                                    String[] partes = infoPaginacion.substring("PAGINACION_INFO:".length()).split("/");
+                                    int paginaMostrada = Integer.parseInt(partes[0]);
+                                    int totalPaginas = Integer.parseInt(partes[1]);
+
+                                    System.out.println("--- Buzón de " + usuarioActual + " (Página " + paginaMostrada + " de " + totalPaginas + ") ---");
+                                    String mensaje;
+                                    while ((mensaje = lector.readLine()) != null) {
+                                        if (mensaje.equals("FIN_BUZON")) break; // Señal de fin de mensajes de la página
+                                        System.out.println(mensaje);
+                                    }
+
+                                    // Preguntar si desea ver la siguiente página
+                                    if (paginaMostrada < totalPaginas) {
+                                        System.out.print("¿Desea ver la siguiente página? (S/N): ");
+                                        String respuesta = teclado.readLine();
+                                        if (respuesta != null && respuesta.equalsIgnoreCase("S")) {
+                                            paginaActual++;
+                                        } else {
+                                            continuarBuzon = false; // El usuario no quiere ver más páginas
+                                        }
+                                    } else {
+                                        System.out.println("Has llegado al final de tu buzón.");
+                                        continuarBuzon = false; // No hay más páginas
+                                    }
+                                } else {
+                                    // Manejar otros mensajes del servidor (ej. errores)
+                                    System.out.println(infoPaginacion); 
+                                    String mensaje;
+                                    while ((mensaje = lector.readLine()) != null) {
+                                        if (mensaje.equals("FIN_BUZON")) break;
+                                        System.out.println(mensaje);
+                                    }
+                                    continuarBuzon = false; // Salir del bucle si no se esperaba paginación
+                                }
                             }
                             break;
                        case "3":
