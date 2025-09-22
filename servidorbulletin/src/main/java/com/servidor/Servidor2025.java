@@ -265,60 +265,107 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
     File archivoBuzon = new File("buzon_" + usuarioB + ".txt");
     if (!archivoBuzon.exists()) {
         escritor.println("El usuario " + usuarioB + " no tiene buzón.");
+        escritor.println("FIN_BORRAR_MENSAJE"); // Nueva señal para indicar el fin de la operación
         return;
     }
 
-    List<String> mensajes = new ArrayList<>();
+    List<String> todosLosMensajes = new ArrayList<>();
     try (BufferedReader br = new BufferedReader(new FileReader(archivoBuzon))) {
         String linea;
         while ((linea = br.readLine()) != null) {
-            mensajes.add(linea);
+            todosLosMensajes.add(linea);
         }
     }
 
-    List<Integer> indices = new ArrayList<>();
-    for (int i = 0; i < mensajes.size(); i++) {
-        String msg = mensajes.get(i);
-        if (msg.startsWith("[" + usuarioActual + "]:")) { 
-            indices.add(i);
+    List<String> mensajesDelRemitente = new ArrayList<>();
+    List<Integer> indicesOriginales = new ArrayList<>(); // Para mapear de vuelta a los índices originales en todosLosMensajes
+    for (int i = 0; i < todosLosMensajes.size(); i++) {
+        String msg = todosLosMensajes.get(i);
+        if (msg.startsWith("[" + usuarioActual + "]:")) {
+            mensajesDelRemitente.add(msg);
+            indicesOriginales.add(i);
         }
     }
 
-    if (indices.isEmpty()) {
+    if (mensajesDelRemitente.isEmpty()) {
         escritor.println("No tienes mensajes enviados a " + usuarioB);
+        escritor.println("FIN_BORRAR_MENSAJE"); // Nueva señal
         return;
     }
-    
-    // Envia la lista de mensajes al cliente
-    escritor.println("=== Mensajes enviados a " + usuarioB + " ===");
-    for (int i = 0; i < indices.size(); i++) {
-        escritor.println((i + 1) + ". " + mensajes.get(indices.get(i)));
-    }
-    escritor.println("0. Salir");
-    escritor.println("FIN_MENSAJES"); // Señal para que el cliente pida la opción
-    
-    String opcion = lectorSocket.readLine();
-    if (opcion == null || opcion.equals("0")) {
-        escritor.println("Regresando al menú principal...");
-    } else {
-        try {
-            int numero = Integer.parseInt(opcion);
-            if (numero >= 1 && numero <= indices.size()) {
-                int idx = indices.get(numero - 1);
-                mensajes.remove(idx);
-                
-                // Reescribe el archivo con los mensajes restantes
-                try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBuzon))) {
-                    for (String m : mensajes) pw.println(m);
-                }
-                escritor.println("Mensaje borrado con éxito.");
+
+    final int MENSAJES_POR_PAGINA = 5;
+    int paginaActual = 0;
+    int totalMensajes = mensajesDelRemitente.size();
+    int totalPaginas = (int) Math.ceil((double) totalMensajes / MENSAJES_POR_PAGINA);
+
+    while (true) {
+        int inicio = paginaActual * MENSAJES_POR_PAGINA;
+        int fin = Math.min(inicio + MENSAJES_POR_PAGINA, totalMensajes);
+
+        escritor.println("=== Mensajes enviados a " + usuarioB + " (Página " + (paginaActual + 1) + "/" + totalPaginas + ") ===");
+        for (int i = inicio; i < fin; i++) {
+            // Mostramos el número global del mensaje, no el de la página
+            escritor.println((i + 1) + ". " + mensajesDelRemitente.get(i));
+        }
+
+        escritor.println("--------------------------------------------------");
+        if (paginaActual > 0) {
+            escritor.println("P. Página anterior");
+        }
+        if (paginaActual < totalPaginas - 1) {
+            escritor.println("N. Página siguiente");
+        }
+        escritor.println("1-" + totalMensajes + ". Seleccionar mensaje para borrar");
+        escritor.println("0. Salir");
+        escritor.println("PROMPT_PAGINATION_CHOICE"); // Señal para que el cliente pida la opción
+
+        String opcionCliente = lectorSocket.readLine();
+        if (opcionCliente == null) {
+            break; // Cliente desconectado
+        }
+
+        if (opcionCliente.equalsIgnoreCase("N")) {
+            if (paginaActual < totalPaginas - 1) {
+                paginaActual++;
             } else {
-                escritor.println("Número inválido.");
+                escritor.println("Ya estás en la última página.");
             }
-        } catch (NumberFormatException e) {
-            escritor.println("Entrada inválida, escribe un número.");
+        } else if (opcionCliente.equalsIgnoreCase("P")) {
+            if (paginaActual > 0) {
+                paginaActual--;
+            } else {
+                escritor.println("Ya estás en la primera página.");
+            }
+        } else if (opcionCliente.equals("0")) {
+            escritor.println("Regresando al menú principal...");
+            break;
+        } else {
+            try {
+                int numeroMensajeSeleccionado = Integer.parseInt(opcionCliente);
+                if (numeroMensajeSeleccionado >= 1 && numeroMensajeSeleccionado <= totalMensajes) {
+                    // Encontrar el índice original del mensaje a borrar
+                    int indexToDeleteInOriginalList = indicesOriginales.get(numeroMensajeSeleccionado - 1);
+
+                    // Eliminar el mensaje de la lista completa
+                    todosLosMensajes.remove(indexToDeleteInOriginalList);
+
+                    // Reescribir el archivo con los mensajes restantes
+                    try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBuzon))) {
+                        for (String m : todosLosMensajes) {
+                            pw.println(m);
+                        }
+                    }
+                    escritor.println("Mensaje borrado con éxito.");
+                    break; // Salir del bucle de paginación después de borrar
+                } else {
+                    escritor.println("Número de mensaje inválido. Intente de nuevo.");
+                }
+            } catch (NumberFormatException e) {
+                escritor.println("Entrada inválida. Por favor, ingrese 'N', 'P', '0' o el número del mensaje a borrar.");
+            }
         }
     }
+    escritor.println("FIN_BORRAR_MENSAJE"); // Señal de fin de operación
 }
 
 }
