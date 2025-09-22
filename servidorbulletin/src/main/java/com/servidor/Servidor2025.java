@@ -304,7 +304,6 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
 
         escritor.println("=== Mensajes enviados a " + usuarioB + " (Página " + (paginaActual + 1) + "/" + totalPaginas + ") ===");
         for (int i = inicio; i < fin; i++) {
-            // Mostramos el número global del mensaje, no el de la página
             escritor.println((i + 1) + ". " + mensajesDelRemitente.get(i));
         }
 
@@ -317,11 +316,11 @@ private static void borrarMensaje(String usuarioActual, String usuarioB, Buffere
         }
         escritor.println("1-" + totalMensajes + ". Seleccionar mensaje para borrar");
         escritor.println("0. Salir");
-        escritor.println("PROMPT_PAGINATION_CHOICE"); // Señal para que el cliente pida la opción
+        escritor.println("ESCOGE_PAGINA"); // Señal para que el cliente pida la opción
 
         String opcionCliente = lectorSocket.readLine();
         if (opcionCliente == null) {
-            break; // Cliente desconectado
+            break;
         }
 
         if (opcionCliente.equalsIgnoreCase("N")) {
