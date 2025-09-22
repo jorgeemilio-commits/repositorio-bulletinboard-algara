@@ -165,18 +165,18 @@ public class Cliente2025 {
                             while (paginando) {
                                 StringBuilder mensajesPagina = new StringBuilder();
                                 while ((respuestaServidor = lector.readLine()) != null) {
-                                    if (respuestaServidor.equals("ESCOGE_PAGINA")) {
-                                        break; // Fin de los mensajes de la pagina actual y opciones
+                                    if (respuestaServidor.equals("PROMPT_PAGINATION_CHOICE")) {
+                                        break; // Fin de los mensajes de la página actual y opciones
                                     }
                                     if (respuestaServidor.equals("FIN_BORRAR_MENSAJE")) {
-                                        paginando = false; 
+                                        paginando = false; // El servidor ha terminado la operación
                                         break;
                                     }
                                     mensajesPagina.append(respuestaServidor).append("\n");
                                 }
 
                                 if (!paginando) {
-                                    // Si se recibio FIN_BORRAR_MENSAJE sal del bucle
+                                    // Si se recibió FIN_BORRAR_MENSAJE, imprime cualquier salida restante y sale del bucle
                                     if (mensajesPagina.length() > 0) {
                                         System.out.print(mensajesPagina.toString());
                                     }
@@ -188,6 +188,9 @@ public class Cliente2025 {
                                 String seleccion = teclado.readLine();
                                 escritor.println(seleccion);
 
+                                // El servidor enviará una respuesta (ej. "Mensaje borrado con éxito.", "Error:", "Regresando...")
+                                // y luego FIN_BORRAR_MENSAJE si la operación ha terminado.
+                                // La siguiente iteración del bucle capturará esa respuesta o la señal de fin.
                             }
                             break;
                         default:
