@@ -153,34 +153,46 @@ public class Cliente2025 {
                         break;
                         // opcion para borrar un mensaje especifico
                         case "6":
-                        System.out.print("Ingrese el nombre del usuario al que vas a borrar tu mensaje: ");
-                        String usuarioB = teclado.readLine();
-    
-                        // Envia el comando y los usuarios al servidor
-                        escritor.println("BorrarMensaje"); 
-                        escritor.println(usuarioActual);    
-                        escritor.println(usuarioB);          
+                            escritor.println("BorrarMensaje");
+                            escritor.println(usuarioActual);
 
-                        String respuesta;
-                        // Lee la respuesta inicial del servidor (la lista o un mensaje de error)
-                        while ((respuesta = lector.readLine()) != null) {
-                            System.out.println(respuesta);
-                            if (respuesta.startsWith("FIN_MENSAJES")) {
-                                // El servidor ha enviado la lista completa, ahora esperamos la seleccion
-                                System.out.print("Selecciona un mensaje para borrar (o 0 para salir): ");
+                            System.out.print("Ingrese el nombre del usuario al que le enviaste el mensaje a borrar: ");
+                            String usuarioB = teclado.readLine();
+                            escritor.println(usuarioB);
+
+                            String respuestaServidor;
+                            boolean paginando = true;
+                            while (paginando) {
+                                StringBuilder mensajesPagina = new StringBuilder();
+                                while ((respuestaServidor = lector.readLine()) != null) {
+                                    if (respuestaServidor.equals("PROMPT_PAGINATION_CHOICE")) {
+                                        break; // Fin de los mensajes de la página actual y opciones
+                                    }
+                                    if (respuestaServidor.equals("FIN_BORRAR_MENSAJE")) {
+                                        paginando = false; // El servidor ha terminado la operación
+                                        break;
+                                    }
+                                    mensajesPagina.append(respuestaServidor).append("\n");
+                                }
+
+                                if (!paginando) {
+                                    // Si se recibió FIN_BORRAR_MENSAJE, imprime cualquier salida restante y sale del bucle
+                                    if (mensajesPagina.length() > 0) {
+                                        System.out.print(mensajesPagina.toString());
+                                    }
+                                    break;
+                                }
+
+                                System.out.print(mensajesPagina.toString());
+                                System.out.print("Seleccione una opción (N/P/0/número): ");
                                 String seleccion = teclado.readLine();
-                                escritor.println(seleccion); // Envia la seleccion al servidor
-            
-                                // Lee la respuesta final del servidor (confirmacion o error)
-                                String resultado = lector.readLine();
-                                System.out.println(resultado);
-                                break; // Salir del bucle
-                           } else if (respuesta.startsWith("Error:") || respuesta.startsWith("No tienes")) {
-                        // El servidor ha enviado un error, no hay mensajes para borrar
-                        break; // Salir del bucle
-                        }
-                    }
-                    break;  
+                                escritor.println(seleccion);
+
+                                // El servidor enviará una respuesta (ej. "Mensaje borrado con éxito.", "Error:", "Regresando...")
+                                // y luego FIN_BORRAR_MENSAJE si la operación ha terminado.
+                                // La siguiente iteración del bucle capturará esa respuesta o la señal de fin.
+                            }
+                            break;
                         default:
                             System.out.println("Opción no válida. Intente de nuevo.");
                     }
