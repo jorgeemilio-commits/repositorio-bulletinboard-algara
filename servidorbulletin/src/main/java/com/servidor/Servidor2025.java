@@ -128,10 +128,34 @@ public class Servidor2025 {
                     String usuarioABorrar = lectorSocket.readLine();
                     borrarUsuario(usuarioABorrar, escritor);
 
-                } else if (opcion.equalsIgnoreCase("BorrarMensaje")) {
+                } else if (opcion.equalsIgnoreCase("BorrarMensaje")) { // Este ahora solo lista mensajes para borrar
                     String usuarioActual = lectorSocket.readLine(); // quien borra
                     String usuarioB = lectorSocket.readLine(); // a quien se lo borra
-                    borrarMensaje(usuarioActual, usuarioB, lectorSocket, escritor);    
+                    String paginaStr = lectorSocket.readLine(); // Recibe la página solicitada
+                    int paginaActual = 1;
+                    try {
+                        paginaActual = Integer.parseInt(paginaStr);
+                    } catch (NumberFormatException e) {
+                        System.out.println("Página inválida recibida para listar mensajes a borrar, usando página 1.");
+                    }
+                    listarMensajesParaBorrar(usuarioActual, usuarioB, paginaActual, escritor); // Nuevo método para listar
+                } else if (opcion.equalsIgnoreCase("EJECUTAR_BORRADO_MENSAJE")) { // Nuevo comando para borrar un mensaje específico
+                    String usuarioActual = lectorSocket.readLine();
+                    String usuarioB = lectorSocket.readLine();
+                    String paginaMostradaStr = lectorSocket.readLine(); // La página que el cliente estaba viendo
+                    String indiceEnPaginaStr = lectorSocket.readLine(); // El número de mensaje en esa página (1-basado)
+                    
+                    int paginaMostrada = 1;
+                    int indiceEnPagina = -1;
+                    try {
+                        paginaMostrada = Integer.parseInt(paginaMostradaStr);
+                        indiceEnPagina = Integer.parseInt(indiceEnPaginaStr);
+                    } catch (NumberFormatException e) {
+                        escritor.println("Error: Datos de borrado inválidos.");
+                        System.out.println("Error al parsear datos de borrado: " + e.getMessage());
+                        continue; // Continuar esperando otra opción del cliente
+                    }
+                    ejecutarBorradoMensaje(usuarioActual, usuarioB, paginaMostrada, indiceEnPagina, escritor);
 
                 } else if (opcion.equalsIgnoreCase("Salir")) {
                     escritor.println("FIN");
@@ -298,66 +322,131 @@ public class Servidor2025 {
     }
 }
      
-// codigo para borrar un mensaje especifico enviado a otro usuario
-private static void borrarMensaje(String usuarioActual, String usuarioB, BufferedReader lectorSocket, PrintWriter escritor) throws IOException {
-    File archivoBuzon = new File("buzon_" + usuarioB + ".txt");
-    if (!archivoBuzon.exists()) {
-        escritor.println("El usuario " + usuarioB + " no tiene buzón.");
-        return;
-    }
-
-    List<String> mensajes = new ArrayList<>();
-    try (BufferedReader br = new BufferedReader(new FileReader(archivoBuzon))) {
-        String linea;
-        while ((linea = br.readLine()) != null) {
-            mensajes.add(linea);
+    // Nuevo método para listar mensajes enviados por el usuario actual a otro usuario, con paginación
+    private static void listarMensajesParaBorrar(String usuarioActual, String usuarioB, int paginaActual, PrintWriter escritor) {
+        File archivoBuzon = new File("buzon_" + usuarioB + ".txt");
+        if (!archivoBuzon.exists()) {
+            escritor.println("El usuario " + usuarioB + " no tiene buzón.");
+            escritor.println("FIN_MENSAJES"); // Señal de fin
+            return;
         }
-    }
 
-    List<Integer> indices = new ArrayList<>();
-    for (int i = 0; i < mensajes.size(); i++) {
-        String msg = mensajes.get(i);
-        if (msg.startsWith("[" + usuarioActual + "]:")) { 
-            indices.add(i);
-        }
-    }
-
-    if (indices.isEmpty()) {
-        escritor.println("No tienes mensajes enviados a " + usuarioB);
-        return;
-    }
-    
-    // Envia la lista de mensajes al cliente
-    escritor.println("=== Mensajes enviados a " + usuarioB + " ===");
-    for (int i = 0; i < indices.size(); i++) {
-        escritor.println((i + 1) + ". " + mensajes.get(indices.get(i)));
-    }
-    escritor.println("0. Salir");
-    escritor.println("FIN_MENSAJES"); // Señal para que el cliente pida la opción
-    
-    String opcion = lectorSocket.readLine();
-    if (opcion == null || opcion.equals("0")) {
-        escritor.println("Regresando al menú principal...");
-    } else {
-        try {
-            int numero = Integer.parseInt(opcion);
-            if (numero >= 1 && numero <= indices.size()) {
-                int idx = indices.get(numero - 1);
-                mensajes.remove(idx);
-                
-                // Reescribe el archivo con los mensajes restantes
-                try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBuzon))) {
-                    for (String m : mensajes) pw.println(m);
-                }
-                escritor.println("Mensaje borrado con éxito.");
-            } else {
-                escritor.println("Número inválido.");
+        List<String> todosLosMensajesEnBuzon = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(archivoBuzon))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                todosLosMensajesEnBuzon.add(linea);
             }
-        } catch (NumberFormatException e) {
-            escritor.println("Entrada inválida, escribe un número.");
+        } catch (IOException e) {
+            escritor.println("Error al leer el buzón de " + usuarioB + ".");
+            escritor.println("FIN_MENSAJES"); // Señal de fin
+            return;
+        }
+
+        // Filtrar solo los mensajes enviados por el usuarioActual
+        List<String> mensajesDelRemitente = new ArrayList<>();
+        // Guardar los índices originales para poder borrar el mensaje correcto más tarde
+        List<Integer> indicesOriginales = new ArrayList<>(); 
+        for (int i = 0; i < todosLosMensajesEnBuzon.size(); i++) {
+            String msg = todosLosMensajesEnBuzon.get(i);
+            if (msg.startsWith("[" + usuarioActual + "]:")) { 
+                mensajesDelRemitente.add(msg);
+                indicesOriginales.add(i);
+            }
+        }
+
+        if (mensajesDelRemitente.isEmpty()) {
+            escritor.println("No tienes mensajes enviados a " + usuarioB + ".");
+            escritor.println("FIN_MENSAJES"); // Señal de fin
+            return;
+        }
+
+        int mensajesPorPagina = 10;
+        int totalMensajesFiltrados = mensajesDelRemitente.size();
+        int totalPaginas = (int) Math.ceil((double) totalMensajesFiltrados / mensajesPorPagina);
+
+        // Asegurarse de que la página actual esté dentro de los límites
+        if (paginaActual < 1) paginaActual = 1;
+        if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+
+        int indiceInicio = (paginaActual - 1) * mensajesPorPagina;
+        int indiceFin = Math.min(indiceInicio + mensajesPorPagina, totalMensajesFiltrados);
+
+        // Enviar información de paginación al cliente
+        escritor.println("PAGINACION_INFO:" + paginaActual + "/" + totalPaginas); 
+        escritor.println("=== Mensajes enviados a " + usuarioB + " (Página " + paginaActual + " de " + totalPaginas + ") ===");
+
+        // Enviar los mensajes de la página actual
+        for (int i = indiceInicio; i < indiceFin; i++) {
+            // El número que ve el cliente es 1-basado y relativo a la página
+            escritor.println((i - indiceInicio + 1) + ". " + mensajesDelRemitente.get(i));
+        }
+        escritor.println("FIN_MENSAJES"); // Señal de fin de mensajes de la página
+    }
+
+    // Nuevo método para ejecutar el borrado de un mensaje específico
+    private static void ejecutarBorradoMensaje(String usuarioActual, String usuarioB, int paginaMostrada, int indiceEnPagina, PrintWriter escritor) {
+        File archivoBuzon = new File("buzon_" + usuarioB + ".txt");
+        if (!archivoBuzon.exists()) {
+            escritor.println("Error: El buzón de " + usuarioB + " no existe.");
+            return;
+        }
+
+        List<String> todosLosMensajesEnBuzon = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(archivoBuzon))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                todosLosMensajesEnBuzon.add(linea);
+            }
+        } catch (IOException e) {
+            escritor.println("Error al leer el buzón para borrar el mensaje.");
+            return;
+        }
+
+        // Volver a filtrar los mensajes para encontrar el índice correcto
+        List<String> mensajesDelRemitente = new ArrayList<>();
+        List<Integer> indicesOriginales = new ArrayList<>();
+        for (int i = 0; i < todosLosMensajesEnBuzon.size(); i++) {
+            String msg = todosLosMensajesEnBuzon.get(i);
+            if (msg.startsWith("[" + usuarioActual + "]:")) {
+                mensajesDelRemitente.add(msg);
+                indicesOriginales.add(i);
+            }
+        }
+
+        if (mensajesDelRemitente.isEmpty()) {
+            escritor.println("Error: No se encontraron mensajes tuyos para borrar.");
+            return;
+        }
+
+        int mensajesPorPagina = 10;
+        int totalMensajesFiltrados = mensajesDelRemitente.size();
+        
+        // Calcular el índice absoluto en la lista filtrada (mensajesDelRemitente)
+        // El cliente envía un índice 1-basado, por eso (indiceEnPagina - 1)
+        int indiceAbsolutoFiltrado = (paginaMostrada - 1) * mensajesPorPagina + (indiceEnPagina - 1);
+
+        if (indiceAbsolutoFiltrado < 0 || indiceAbsolutoFiltrado >= totalMensajesFiltrados) {
+            escritor.println("Error: Número de mensaje inválido para borrar.");
+            return;
+        }
+
+        // Obtener el índice real en la lista completa de mensajes del buzón
+        int indiceRealEnBuzon = indicesOriginales.get(indiceAbsolutoFiltrado);
+
+        // Borrar el mensaje de la lista completa
+        todosLosMensajesEnBuzon.remove(indiceRealEnBuzon);
+
+        // Reescribir el archivo del buzón sin el mensaje borrado
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBuzon))) {
+            for (String m : todosLosMensajesEnBuzon) {
+                pw.println(m);
+            }
+            escritor.println("Mensaje borrado con éxito.");
+        } catch (IOException e) {
+            escritor.println("Error al reescribir el buzón después de borrar el mensaje.");
         }
     }
-}
 
 // codigo para borrar un usuario y su buzón
 private static void borrarUsuario(String usuario, PrintWriter escritor) {

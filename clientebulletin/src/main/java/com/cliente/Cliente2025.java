@@ -206,34 +206,103 @@ public class Cliente2025 {
                         break;
                         // opcion para borrar un mensaje especifico
                         case "6":
-                        System.out.print("Ingrese el nombre del usuario al que vas a borrar tu mensaje: ");
-                        String usuarioB = teclado.readLine();
-    
-                        // Envia el comando y los usuarios al servidor
-                        escritor.println("BorrarMensaje"); 
-                        escritor.println(usuarioActual);    
-                        escritor.println(usuarioB);          
+                            System.out.print("Ingrese el nombre del usuario al que enviaste el mensaje a borrar: ");
+                            String usuarioB = teclado.readLine();
+        
+                            int paginaActualBorrar = 1;
+                            boolean continuarBorradoMensajes = true;
 
-                        String respuesta;
-                        // Lee la respuesta inicial del servidor (la lista o un mensaje de error)
-                        while ((respuesta = lector.readLine()) != null) {
-                            System.out.println(respuesta);
-                            if (respuesta.startsWith("FIN_MENSAJES")) {
-                                // El servidor ha enviado la lista completa, ahora esperamos la seleccion
-                                System.out.print("Selecciona un mensaje para borrar (o 0 para salir): ");
-                                String seleccion = teclado.readLine();
-                                escritor.println(seleccion); // Envia la seleccion al servidor
-            
-                                // Lee la respuesta final del servidor (confirmacion o error)
-                                String resultado = lector.readLine();
-                                System.out.println(resultado);
-                                break; // Salir del bucle
-                           } else if (respuesta.startsWith("Error:") || respuesta.startsWith("No tienes")) {
-                        // El servidor ha enviado un error, no hay mensajes para borrar
-                        break; // Salir del bucle
-                        }
-                    }
-                    break;
+                            while (continuarBorradoMensajes) {
+                                // Solicitar al servidor la lista paginada de mensajes para borrar
+                                escritor.println("BorrarMensaje"); 
+                                escritor.println(usuarioActual);    
+                                escritor.println(usuarioB);          
+                                escritor.println(String.valueOf(paginaActualBorrar)); // Enviar la página solicitada
+
+                                String infoPaginacion = lector.readLine();
+                                if (infoPaginacion == null) {
+                                    System.out.println("Error al recibir información del servidor.");
+                                    continuarBorradoMensajes = false;
+                                    break;
+                                }
+
+                                // Si no hay mensajes o hay un error, el servidor envía un mensaje directo
+                                if (infoPaginacion.startsWith("No tienes mensajes enviados a") || infoPaginacion.startsWith("El usuario") || infoPaginacion.startsWith("Error:")) {
+                                    System.out.println(infoPaginacion);
+                                    lector.readLine(); // Consumir la señal FIN_MENSAJES
+                                    continuarBorradoMensajes = false;
+                                    break;
+                                }
+                                
+                                // Si el servidor envía información de paginación
+                                if (infoPaginacion.startsWith("PAGINACION_INFO:")) {
+                                    String[] partes = infoPaginacion.substring("PAGINACION_INFO:".length()).split("/");
+                                    int paginaMostrada = Integer.parseInt(partes[0]);
+                                    int totalPaginas = Integer.parseInt(partes[1]);
+
+                                    String encabezado = lector.readLine(); // Leer el encabezado "=== Mensajes enviados a..."
+                                    System.out.println(encabezado);
+
+                                    String mensaje;
+                                    while ((mensaje = lector.readLine()) != null) {
+                                        if (mensaje.equals("FIN_MENSAJES")) break; // Señal de fin de mensajes de la página
+                                        System.out.println(mensaje);
+                                    }
+
+                                    System.out.println("--------------------------------------------------");
+                                    System.out.println("Opciones:");
+                                    if (paginaMostrada < totalPaginas) System.out.println("S. Siguiente página");
+                                    if (paginaMostrada > 1) System.out.println("A. Página anterior");
+                                    System.out.println("B [número]. Borrar mensaje (ej. B 1)");
+                                    System.out.println("0. Salir");
+                                    System.out.print("Seleccione una opción: ");
+                                    String seleccion = teclado.readLine();
+
+                                    if (seleccion == null) {
+                                        continuarBorradoMensajes = false;
+                                        break;
+                                    }
+
+                                    if (seleccion.equalsIgnoreCase("S")) {
+                                        if (paginaMostrada < totalPaginas) {
+                                            paginaActualBorrar++;
+                                        } else {
+                                            System.out.println("Ya estás en la última página.");
+                                        }
+                                    } else if (seleccion.equalsIgnoreCase("A")) {
+                                        if (paginaMostrada > 1) {
+                                            paginaActualBorrar--;
+                                        } else {
+                                            System.out.println("Ya estás en la primera página.");
+                                        }
+                                    } else if (seleccion.startsWith("B ")) {
+                                        try {
+                                            int numeroMensajeABorrar = Integer.parseInt(seleccion.substring(2).trim());
+                                            // Enviar el comando de borrado al servidor
+                                            escritor.println("EJECUTAR_BORRADO_MENSAJE");
+                                            escritor.println(usuarioActual);
+                                            escritor.println(usuarioB);
+                                            escritor.println(String.valueOf(paginaMostrada)); // La página que se mostró
+                                            escritor.println(String.valueOf(numeroMensajeABorrar)); // El número de mensaje en esa página
+
+                                            String resultadoBorrado = lector.readLine();
+                                            System.out.println(resultadoBorrado);
+                                            continuarBorradoMensajes = false; // Salir después de borrar
+                                        } catch (NumberFormatException e) {
+                                            System.out.println("Número de mensaje inválido. Intente de nuevo.");
+                                        }
+                                    } else if (seleccion.equals("0")) {
+                                        continuarBorradoMensajes = false; // Salir
+                                    } else {
+                                        System.out.println("Opción no válida.");
+                                    }
+                                } else {
+                                    // Esto no debería ocurrir si el servidor siempre envía PAGINACION_INFO o un mensaje de error/no hay mensajes
+                                    System.out.println("Respuesta inesperada del servidor: " + infoPaginacion);
+                                    continuarBorradoMensajes = false;
+                                }
+                            }
+                            break;
                     case "7":
                     //opcion para darse de baja
                      System.out.print("¿Estás seguro de que deseas darte de baja? Esto borrará tu cuenta y tu buzón. (S/N): ");
