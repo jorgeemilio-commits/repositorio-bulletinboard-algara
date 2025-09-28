@@ -10,10 +10,17 @@ import java.net.Socket;
 
 public class Cliente2025 {
 
+    /**
+     * Punto de entrada principal para la aplicación cliente.
+     * Establece una conexión con el servidor y maneja la interacción del usuario,
+     * incluyendo inicio de sesión, registro, envío/recepción de mensajes y gestión de cuenta.
+     *
+     * @param args Argumentos de línea de comandos (no utilizados).
+     */
     public static void main(String[] args) {
-        try (Socket socket = new Socket("localhost", 8080);
-             PrintWriter escritor = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader lector = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        try (Socket socketCliente = new Socket("localhost", 8080);
+             PrintWriter escritor = new PrintWriter(socketCliente.getOutputStream(), true);
+             BufferedReader lector = new BufferedReader(new InputStreamReader(socketCliente.getInputStream()));
              BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in))) {
 
             boolean sesionIniciada = false;
@@ -31,7 +38,7 @@ public class Cliente2025 {
 
                     switch (opcionMenu) {
                         case "1":
-                        //opcion para iniciar sesion
+                            // Opción para iniciar sesión
                             escritor.println("Inicio");
                             String respuestaInicio = lector.readLine();
                             if (respuestaInicio == null) break;
@@ -41,45 +48,45 @@ public class Cliente2025 {
                             }
                             System.out.println(respuestaInicio);
 
-                            String usuario = teclado.readLine();
-                            escritor.println(usuario);
+                            String nombreUsuario = teclado.readLine();
+                            escritor.println(nombreUsuario);
 
                             System.out.println(lector.readLine());
-                            String password = teclado.readLine();
-                            escritor.println(password);
+                            String contrasena = teclado.readLine();
+                            escritor.println(contrasena);
 
-                            String resultadoLogin = lector.readLine();
-                            System.out.println(resultadoLogin);
+                            String resultadoInicioSesion = lector.readLine();
+                            System.out.println(resultadoInicioSesion);
 
-                            if (resultadoLogin != null && resultadoLogin.startsWith("Inicio de sesión exitoso")) {
+                            if (resultadoInicioSesion != null && resultadoInicioSesion.startsWith("Inicio de sesión exitoso")) {
                                 sesionIniciada = true;
-                                usuarioActual = usuario;
+                                usuarioActual = nombreUsuario;
                             }
                             break;
 
                         case "2":
-                        //opcion para registrar usuario nuevo
+                            // Opción para registrar un nuevo usuario
                             escritor.println("Registrar");
-                            String respuestaRegistrar = lector.readLine();
-                            if (respuestaRegistrar == null) break;
-                            if (respuestaRegistrar.equalsIgnoreCase("FIN")) {
+                            String respuestaRegistro = lector.readLine();
+                            if (respuestaRegistro == null) break;
+                            if (respuestaRegistro.equalsIgnoreCase("FIN")) {
                                 System.out.println("Conexión cerrada por el servidor.");
                                 break;
                             }
-                            System.out.println(respuestaRegistrar);
+                            System.out.println(respuestaRegistro);
 
-                            String nuevoUsuario = teclado.readLine();
-                            escritor.println(nuevoUsuario);
+                            String nuevoNombreUsuario = teclado.readLine();
+                            escritor.println(nuevoNombreUsuario);
 
                             System.out.println(lector.readLine());
-                            String nuevoPassword = teclado.readLine();
-                            escritor.println(nuevoPassword);
+                            String nuevaContrasena = teclado.readLine();
+                            escritor.println(nuevaContrasena);
 
                             System.out.println(lector.readLine());
                             break;
 
                         case "3":
-                        //opcion para salir
+                            // Opción para salir de la aplicación
                             escritor.println("Salir");
                             String respuestaSalir = lector.readLine();
                             if (respuestaSalir != null && respuestaSalir.equalsIgnoreCase("FIN")) {
@@ -92,8 +99,8 @@ public class Cliente2025 {
                             break;
                     }
                 } else {
-                    // Menu de navegacion tras login
-                    System.out.println("------ Menú de usuario "+ usuarioActual +" ------");
+                    // Menú de navegación tras iniciar sesión
+                    System.out.println("------ Menú de usuario " + usuarioActual + " ------");
                     System.out.println("1. Ver todos los usuarios registrados");
                     System.out.println("2. Ver tu buzón de mensajes");
                     System.out.println("3. Enviar un mensaje a un usuario");
@@ -107,7 +114,7 @@ public class Cliente2025 {
 
                     switch (opcionUsuario) {
                         case "1":
-                        //opcion para ver todos los usuarios
+                            // Opción para ver todos los usuarios registrados
                             escritor.println("VerUsuarios");
                             String linea;
                             while ((linea = lector.readLine()) != null) {
@@ -116,7 +123,7 @@ public class Cliente2025 {
                             }
                             break;
                         case "2":
-                        //opcion para ver el buzon
+                            // Opción para ver el buzón de mensajes del usuario actual
                             escritor.println("VerBuzon");
                             escritor.println(usuarioActual);
                             String mensaje;
@@ -125,80 +132,72 @@ public class Cliente2025 {
                                 System.out.println(mensaje);
                             }
                             break;
-                       case "3":
-                       //opcion para enviar un mensaje
+                        case "3":
+                            // Opción para enviar un mensaje a otro usuario
                             escritor.println("EnviarMensaje");
-                            //quien envia el mensaje
-                            escritor.println(usuarioActual); 
+                            escritor.println(usuarioActual); // Remitente
                             System.out.print("Ingrese el nombre del destinatario: ");
                             String destinatario = teclado.readLine();
-                            //a quien va dirigido el mensaje
-                            escritor.println(destinatario);
+                            escritor.println(destinatario); // Destinatario
                             System.out.print("Escriba el mensaje: ");
-                            String mensajeEnviar = teclado.readLine();
-                            //el mensaje a enviar
-                            escritor.println(mensajeEnviar);
-                            System.out.println(lector.readLine()); 
+                            String mensajeAEnviar = teclado.readLine();
+                            escritor.println(mensajeAEnviar); // Contenido del mensaje
+                            System.out.println(lector.readLine());
                             break;
                         case "4":
-                        //opcion para cerrar sesion y regresar al menu principal
+                            // Opción para cerrar la sesión del usuario actual
                             sesionIniciada = false;
                             usuarioActual = "";
                             System.out.println("Sesión cerrada. Regresando al menú principal.");
                             break;
                         case "5":
-                         //opcion para borrar buzon
+                            // Opción para borrar el buzón de mensajes del usuario actual
                             escritor.println("BorrarBuzon");
                             escritor.println(usuarioActual);
                             System.out.println(lector.readLine());
-                        break;
-                        // opcion para borrar un mensaje especifico
+                            break;
                         case "6":
-                        System.out.print("Ingrese el nombre del usuario al que vas a borrar tu mensaje: ");
-                        String usuarioB = teclado.readLine();
-    
-                        // Envia el comando y los usuarios al servidor
-                        escritor.println("BorrarMensaje"); 
-                        escritor.println(usuarioActual);    
-                        escritor.println(usuarioB);          
+                            // Opción para borrar un mensaje específico enviado por el usuario actual
+                            System.out.print("Ingrese el nombre del usuario al que enviaste el mensaje a borrar: ");
+                            String usuarioObjetivo = teclado.readLine();
 
-                        String respuesta;
-                        // Lee la respuesta inicial del servidor (la lista o un mensaje de error)
-                        while ((respuesta = lector.readLine()) != null) {
-                            System.out.println(respuesta);
-                            if (respuesta.startsWith("FIN_MENSAJES")) {
-                                // El servidor ha enviado la lista completa, ahora esperamos la seleccion
-                                System.out.print("Selecciona un mensaje para borrar (o 0 para salir): ");
-                                String seleccion = teclado.readLine();
-                                escritor.println(seleccion); // Envia la seleccion al servidor
-            
-                                // Lee la respuesta final del servidor (confirmacion o error)
-                                String resultado = lector.readLine();
-                                System.out.println(resultado);
-                                break; // Salir del bucle
-                           } else if (respuesta.startsWith("Error:") || respuesta.startsWith("No tienes")) {
-                        // El servidor ha enviado un error, no hay mensajes para borrar
-                        break; // Salir del bucle
-                        }
-                    }
-                    break;
-                    case "7":
-                    //opcion para darse de baja
-                     System.out.print("¿Estás seguro de que deseas darte de baja? Esto borrará tu cuenta y tu buzón. (S/N): ");
-                     String confirmacion = teclado.readLine();
-                     if (confirmacion.equalsIgnoreCase("S")) {
-                        escritor.println("BorrarUsuario");
-                        escritor.println(usuarioActual);
-                        String respuestaBorrado = lector.readLine();
-                        System.out.println(respuestaBorrado);
-                        if (respuestaBorrado.contains("exitosa")) {
-                            sesionIniciada = false;
-                            usuarioActual = "";
-                        }
-                    } else {
-                        System.out.println("Operación cancelada.");
-                    }
-                break;
+                            escritor.println("BorrarMensaje");
+                            escritor.println(usuarioActual);
+                            escritor.println(usuarioObjetivo);
+
+                            String respuestaServidor;
+                            while ((respuestaServidor = lector.readLine()) != null) {
+                                System.out.println(respuestaServidor);
+                                if (respuestaServidor.startsWith("FIN_MENSAJES")) {
+                                    System.out.print("Selecciona un mensaje para borrar (o 0 para salir): ");
+                                    String seleccionMensaje = teclado.readLine();
+                                    escritor.println(seleccionMensaje);
+
+                                    String resultadoOperacion = lector.readLine();
+                                    System.out.println(resultadoOperacion);
+                                    break;
+                                } else if (respuestaServidor.startsWith("Error:") || respuestaServidor.startsWith("No tienes")) {
+                                    break;
+                                }
+                            }
+                            break;
+                        case "7":
+                            // Opción para darse de baja (eliminar la cuenta del usuario actual)
+                            System.out.print("¿Estás seguro de que deseas darte de baja? Esto borrará tu cuenta y tu buzón. (S/N): ");
+                            String confirmacion = teclado.readLine();
+                            if (confirmacion.equalsIgnoreCase("S")) {
+                                escritor.println("BorrarUsuario");
+                                escritor.println(usuarioActual);
+                                String respuestaBorrado = lector.readLine();
+                                System.out.println(respuestaBorrado);
+                                if (respuestaBorrado.contains("exitosa")) {
+                                    sesionIniciada = false;
+                                    usuarioActual = "";
+                                }
+                            } else {
+                                System.out.println("Operación cancelada.");
+                            }
+                            break;
                         default:
                             System.out.println("Opción no válida. Intente de nuevo.");
                     }
