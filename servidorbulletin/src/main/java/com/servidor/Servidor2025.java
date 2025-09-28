@@ -10,12 +10,16 @@ public class Servidor2025 {
 
     private static final String ARCHIVO_USUARIOS = "usuarios.txt";
 
+    /**
+     * Punto de entrada principal del servidor.
+     * Inicializa el ServerSocket y espera conexiones de clientes, manejando cada una en un nuevo hilo.
+     */
     public static void main(String[] args) {
-        try (ServerSocket socketEspecial = new ServerSocket(8080)) {
+        try (ServerSocket socketServidor = new ServerSocket(8080)) {
             System.out.println("Servidor de Bulletin Board iniciado en puerto 8080...");
 
             while (true) {
-                Socket cliente = socketEspecial.accept();
+                Socket cliente = socketServidor.accept();
                 System.out.println("Cliente conectado: " + cliente.getInetAddress());
                 new Thread(() -> manejarCliente(cliente)).start();
             }
@@ -25,113 +29,105 @@ public class Servidor2025 {
         }
     }
 
+    /**
+     * Maneja la comunicación con un cliente individual.
+     * Lee las opciones enviadas por el cliente y ejecuta la lógica correspondiente.
+     */
     private static void manejarCliente(Socket cliente) {
         try (
             PrintWriter escritor = new PrintWriter(cliente.getOutputStream(), true);
             BufferedReader lectorSocket = new BufferedReader(new InputStreamReader(cliente.getInputStream()))
         ) {
-            String opcion;
-            while ((opcion = lectorSocket.readLine()) != null) {
-                //procesa la opcion recibida
-                if (opcion.equalsIgnoreCase("Inicio")) {
-                    escritor.println("Ingrese su nombre de usuario:");
-                    String usuario = lectorSocket.readLine();
-                    escritor.println("Ingrese su contraseña:");
-                    String password = lectorSocket.readLine();
+            String opcionCliente;
+            while ((opcionCliente = lectorSocket.readLine()) != null) {
+                switch (opcionCliente.toLowerCase()) {
+                    case "inicio":
+                        escritor.println("Ingrese su nombre de usuario:");
+                        String nombreUsuarioInicio = lectorSocket.readLine();
+                        escritor.println("Ingrese su contraseña:");
+                        String contrasenaInicio = lectorSocket.readLine();
 
-                    if (validarUsuario(usuario, password)) {
-                        escritor.println("Inicio de sesión exitoso. Bienvenido " + usuario + "!");
-                    } else {
-                        escritor.println("Usuario o contraseña incorrectos.");
-                    }
-                }
-                else if (opcion.equalsIgnoreCase("Registrar")) {
-                    escritor.println("Ingrese un nombre de usuario para registrar:");
-                     String nuevoUsuario = lectorSocket.readLine();
-
-                     boolean existeUsuario = false;
-                     List<String> usuarios = leerArchivoUsuarios();
-                     for (String linea : usuarios) {
-                     String[] partes = linea.split("\\|");
-                     if (partes.length >= 2 && partes[1].equalsIgnoreCase(nuevoUsuario)) {
-                     existeUsuario = true;
-                     break;
+                        if (validarUsuario(nombreUsuarioInicio, contrasenaInicio)) {
+                            escritor.println("Inicio de sesión exitoso. Bienvenido " + nombreUsuarioInicio + "!");
+                        } else {
+                            escritor.println("Usuario o contraseña incorrectos.");
                         }
-                    }
+                        break;
 
-                    if (existeUsuario) {
-                    escritor.println("Error: El usuario '" + nuevoUsuario + "' ya existe. Intente con otro nombre.");
-                    } else {
-                    escritor.println("Ingrese una contraseña:");
-                    String nuevoPassword = lectorSocket.readLine();
+                    case "registrar":
+                        escritor.println("Ingrese un nombre de usuario para registrar:");
+                        String nuevoNombreUsuario = lectorSocket.readLine();
 
-                    int nuevoId = obtenerSiguienteId();
-                    registrarUsuario(nuevoId, nuevoUsuario, nuevoPassword);
+                        if (existeUsuario(nuevoNombreUsuario)) {
+                            escritor.println("Error: El usuario '" + nuevoNombreUsuario + "' ya existe. Intente con otro nombre.");
+                        } else {
+                            escritor.println("Ingrese una contraseña:");
+                            String nuevaContrasena = lectorSocket.readLine();
 
-                    escritor.println("Usuario " + nuevoUsuario + " registrado exitosamente con ID: " + nuevoId);
-                 }
+                            int nuevoId = obtenerSiguienteId();
+                            registrarUsuario(nuevoId, nuevoNombreUsuario, nuevaContrasena);
 
-                } else if (opcion.equalsIgnoreCase("VerUsuarios")) {
-                    List<String> usuarios = leerArchivoUsuarios();
-                    if (usuarios.isEmpty()) {
-                        escritor.println("No hay usuarios registrados.");
-                    } else {
-                        escritor.println("Usuarios registrados:");
-                        for (String linea : usuarios) {
-                            String[] partes = linea.split("\\|");
-                            if (partes.length >= 2) {
-                                escritor.println("- " + partes[1]);
+                            escritor.println("Usuario " + nuevoNombreUsuario + " registrado exitosamente con ID: " + nuevoId);
+                        }
+                        break;
+
+                    case "verusuarios":
+                        List<String> usuariosRegistrados = leerArchivoUsuarios();
+                        if (usuariosRegistrados.isEmpty()) {
+                            escritor.println("No hay usuarios registrados.");
+                        } else {
+                            escritor.println("Usuarios registrados:");
+                            for (String linea : usuariosRegistrados) {
+                                String[] partes = linea.split("\\|");
+                                if (partes.length >= 2) {
+                                    escritor.println("- " + partes[1]);
+                                }
                             }
+                            escritor.println("FIN_USUARIOS");
                         }
-                        escritor.println("FIN_USUARIOS");
-                    }
+                        break;
 
-                } else if (opcion.equalsIgnoreCase("EnviarMensaje")) {
-                   String remitente = lectorSocket.readLine();
-                   String destinatario = lectorSocket.readLine();
-                   String mensaje = lectorSocket.readLine();
+                    case "enviarmensaje":
+                        String remitenteMensaje = lectorSocket.readLine();
+                        String destinatarioMensaje = lectorSocket.readLine();
+                        String contenidoMensaje = lectorSocket.readLine();
 
-                   boolean existeDestinatario = false;
-                   List<String> usuarios = leerArchivoUsuarios();
-                   for (String linea : usuarios) {
-                   String[] partes = linea.split("\\|");
-                   if (partes.length >= 2 && partes[1].equalsIgnoreCase(destinatario)) {
-                   existeDestinatario = true;
-                   break;
-        }
-    }
+                        if (!existeUsuario(destinatarioMensaje)) {
+                            escritor.println("Error: El usuario '" + destinatarioMensaje + "' no existe.");
+                        } else {
+                            guardarMensaje(remitenteMensaje, destinatarioMensaje, contenidoMensaje);
+                            escritor.println("Mensaje enviado a " + destinatarioMensaje);
+                        }
+                        break;
 
-    if (!existeDestinatario) {
-        escritor.println("Error: El usuario '" + destinatario + "' no existe.");
-    } else {
-        guardarMensaje(remitente, destinatario, mensaje);
-        escritor.println("Mensaje enviado a " + destinatario);
-    }
+                    case "verbuzon":
+                        String usuarioBuzon = lectorSocket.readLine();
+                        enviarBuzon(usuarioBuzon, escritor);
+                        break;
 
+                    case "borrarbuzon":
+                        String usuarioBorrarBuzon = lectorSocket.readLine();
+                        borrarBuzon(usuarioBorrarBuzon, escritor);
+                        break;
 
-                } else if (opcion.equalsIgnoreCase("VerBuzon")) {
-                    String usuario = lectorSocket.readLine();
-                    enviarBuzon(usuario, escritor);
+                    case "borrarusuario":
+                        String usuarioABorrar = lectorSocket.readLine();
+                        borrarUsuario(usuarioABorrar, escritor);
+                        break;
 
-                } else if (opcion.equalsIgnoreCase("BorrarBuzon")) {
-                    String usuario = lectorSocket.readLine();
-                    borrarBuzon(usuario, escritor);
+                    case "borrarmensaje":
+                        String usuarioActual = lectorSocket.readLine();
+                        String usuarioObjetivo = lectorSocket.readLine();
+                        borrarMensaje(usuarioActual, usuarioObjetivo, lectorSocket, escritor);
+                        break;
 
-                } else if (opcion.equalsIgnoreCase("BorrarUsuario")) {
-                    String usuarioABorrar = lectorSocket.readLine();
-                    borrarUsuario(usuarioABorrar, escritor);
+                    case "salir":
+                        escritor.println("FIN");
+                        return;
 
-                } else if (opcion.equalsIgnoreCase("BorrarMensaje")) {
-                    String usuarioActual = lectorSocket.readLine(); // quien borra
-                    String usuarioB = lectorSocket.readLine(); // a quien se lo borra
-                    borrarMensaje(usuarioActual, usuarioB, lectorSocket, escritor);    
-
-                } else if (opcion.equalsIgnoreCase("Salir")) {
-                    escritor.println("FIN");
-                    break;
-
-                } else {
-                    escritor.println("Opción no válida. Intente de nuevo.");
+                    default:
+                        escritor.println("Opción no válida. Intente de nuevo.");
+                        break;
                 }
             }
 
@@ -147,15 +143,20 @@ public class Servidor2025 {
         }
     }
 
-    //codigo para validar usuario
-    private static boolean validarUsuario(String usuario, String password) {
+    /**
+     * Valida las credenciales de un usuario comparándolas con el archivo de usuarios.
+     * @param nombreUsuario El nombre de usuario a validar.
+     * @param contrasena La contraseña a validar.
+     * @return true si las credenciales son válidas, false en caso contrario.
+     */
+    private static boolean validarUsuario(String nombreUsuario, String contrasena) {
         List<String> usuarios = leerArchivoUsuarios();
         for (String linea : usuarios) {
             String[] partes = linea.split("\\|");
             if (partes.length == 3) {
-                String nombre = partes[1];
-                String pass = partes[2];
-                if (nombre.equalsIgnoreCase(usuario) && pass.equals(password)) {
+                String nombreLeido = partes[1];
+                String contrasenaLeida = partes[2];
+                if (nombreLeido.equalsIgnoreCase(nombreUsuario) && contrasenaLeida.equals(contrasena)) {
                     return true;
                 }
             }
@@ -163,18 +164,43 @@ public class Servidor2025 {
         return false;
     }
 
-    //codigo para registrar usuario nuevo
-    private static void registrarUsuario(int id, String nombre, String password) {
+    /**
+     * Verifica si un usuario ya existe en el archivo de usuarios.
+     * @param nombreUsuario El nombre de usuario a verificar.
+     * @return true si el usuario existe, false en caso contrario.
+     */
+    private static boolean existeUsuario(String nombreUsuario) {
+        List<String> usuarios = leerArchivoUsuarios();
+        for (String linea : usuarios) {
+            String[] partes = linea.split("\\|");
+            if (partes.length >= 2 && partes[1].equalsIgnoreCase(nombreUsuario)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Registra un nuevo usuario en el archivo de usuarios.
+     * @param id El ID único para el nuevo usuario.
+     * @param nombre El nombre del nuevo usuario.
+     * @param contrasena La contraseña del nuevo usuario.
+     */
+    private static void registrarUsuario(int id, String nombre, String contrasena) {
         try (FileWriter fw = new FileWriter(ARCHIVO_USUARIOS, true);
              BufferedWriter bw = new BufferedWriter(fw)) {
-            bw.write(id + "|" + nombre + "|" + password);
+            bw.write(id + "|" + nombre + "|" + contrasena);
             bw.newLine();
         } catch (IOException e) {
             System.out.println("Error al registrar usuario: " + e.getMessage());
         }
     }
 
-    //codigo para obtener el siguiente ID disponible
+    /**
+     * Obtiene el siguiente ID disponible para un nuevo usuario.
+     * Busca el ID más alto existente y devuelve el siguiente número.
+     * @return El siguiente ID disponible.
+     */
     private static int obtenerSiguienteId() {
         List<String> usuarios = leerArchivoUsuarios();
         int maxId = 0;
@@ -190,7 +216,11 @@ public class Servidor2025 {
         return maxId + 1;
     }
 
-    //codigo para leer archivo de usuarios
+    /**
+     * Lee todas las líneas del archivo de usuarios.
+     * Si el archivo no existe, lo crea.
+     * @return Una lista de cadenas, donde cada cadena es una línea del archivo de usuarios.
+     */
     private static List<String> leerArchivoUsuarios() {
         List<String> usuarios = new ArrayList<>();
         File archivo = new File(ARCHIVO_USUARIOS);
@@ -212,19 +242,29 @@ public class Servidor2025 {
         return usuarios;
     }
 
-    //codigo para guardar mensaje en el buzon del destinatario
-    private static void guardarMensaje(String remitente, String destinatario, String mensaje) {
+    /**
+     * Guarda un mensaje en el buzón del destinatario.
+     * Cada mensaje se guarda en un archivo llamado "buzon_[destinatario].txt".
+     * @param remitente El nombre de usuario del remitente.
+     * @param destinatario El nombre de usuario del destinatario.
+     * @param contenidoMensaje El contenido del mensaje.
+     */
+    private static void guardarMensaje(String remitente, String destinatario, String contenidoMensaje) {
         File archivo = new File("buzon_" + destinatario + ".txt");
         try (FileWriter fw = new FileWriter(archivo, true);
              BufferedWriter bw = new BufferedWriter(fw)) {
-            bw.write("[" + remitente + "]: " + mensaje);
+            bw.write("[" + remitente + "]: " + contenidoMensaje);
             bw.newLine();
         } catch (IOException e) {
             System.out.println("Error al guardar mensaje: " + e.getMessage());
         }
     }
 
-    //codigo para enviar el buzon al usuario que lo solicito
+    /**
+     * Envía el contenido del buzón de un usuario al cliente.
+     * @param usuario El nombre de usuario del que el buzón se va a enviar.
+     * @param escritor El PrintWriter para enviar los mensajes al cliente.
+     */
     private static void enviarBuzon(String usuario, PrintWriter escritor) {
         File archivo = new File("buzon_" + usuario + ".txt");
         if (!archivo.exists()) {
@@ -248,136 +288,146 @@ public class Servidor2025 {
         escritor.println("FIN_BUZON");
     }
 
-
-    //codigo para borrar el buzon del usuario que lo solicito
+    /**
+     * Borra el archivo de buzón de un usuario.
+     * @param usuario El nombre de usuario del que el buzón se va a borrar.
+     * @param escritor El PrintWriter es para enviar la confirmación al cliente.
+     */
     private static void borrarBuzon(String usuario, PrintWriter escritor) {
-    File archivo = new File("buzon_" + usuario + ".txt");
-    if (!archivo.exists()) {
-        escritor.println("No tienes buzón para borrar.");
-        return;
-    }
-
-    if (archivo.delete()) {
-        escritor.println("Buzón borrado exitosamente.");
-    } else {
-        escritor.println("Error al borrar el buzón.");
-    }
-}
-     
-// codigo para borrar un mensaje especifico enviado a otro usuario
-private static void borrarMensaje(String usuarioActual, String usuarioB, BufferedReader lectorSocket, PrintWriter escritor) throws IOException {
-    File archivoBuzon = new File("buzon_" + usuarioB + ".txt");
-    if (!archivoBuzon.exists()) {
-        escritor.println("El usuario " + usuarioB + " no tiene buzón.");
-        return;
-    }
-
-    List<String> mensajes = new ArrayList<>();
-    try (BufferedReader br = new BufferedReader(new FileReader(archivoBuzon))) {
-        String linea;
-        while ((linea = br.readLine()) != null) {
-            mensajes.add(linea);
-        }
-    }
-
-    List<Integer> indices = new ArrayList<>();
-    for (int i = 0; i < mensajes.size(); i++) {
-        String msg = mensajes.get(i);
-        if (msg.startsWith("[" + usuarioActual + "]:")) { 
-            indices.add(i);
-        }
-    }
-
-    if (indices.isEmpty()) {
-        escritor.println("No tienes mensajes enviados a " + usuarioB);
-        return;
-    }
-    
-    // Envia la lista de mensajes al cliente
-    escritor.println("=== Mensajes enviados a " + usuarioB + " ===");
-    for (int i = 0; i < indices.size(); i++) {
-        escritor.println((i + 1) + ". " + mensajes.get(indices.get(i)));
-    }
-    escritor.println("0. Salir");
-    escritor.println("FIN_MENSAJES"); // Señal para que el cliente pida la opción
-    
-    String opcion = lectorSocket.readLine();
-    if (opcion == null || opcion.equals("0")) {
-        escritor.println("Regresando al menú principal...");
-    } else {
-        try {
-            int numero = Integer.parseInt(opcion);
-            if (numero >= 1 && numero <= indices.size()) {
-                int idx = indices.get(numero - 1);
-                mensajes.remove(idx);
-                
-                // Reescribe el archivo con los mensajes restantes
-                try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBuzon))) {
-                    for (String m : mensajes) pw.println(m);
-                }
-                escritor.println("Mensaje borrado con éxito.");
-            } else {
-                escritor.println("Número inválido.");
-            }
-        } catch (NumberFormatException e) {
-            escritor.println("Entrada inválida, escribe un número.");
-        }
-    }
-}
-
-// codigo para borrar un usuario y su buzón
-private static void borrarUsuario(String usuario, PrintWriter escritor) {
-    // borra el usuario del archivo de usuarios
-    File archivoUsuarios = new File(ARCHIVO_USUARIOS);
-    File archivoTemp = new File("temp_usuarios.txt");
-
-    try (BufferedReader br = new BufferedReader(new FileReader(archivoUsuarios));
-         BufferedWriter bw = new BufferedWriter(new FileWriter(archivoTemp))) {
-        String linea;
-        boolean usuarioEncontrado = false;
-        while ((linea = br.readLine()) != null) {
-            String[] partes = linea.split("\\|");
-            if (partes.length >= 2 && partes[1].equalsIgnoreCase(usuario)) {
-                usuarioEncontrado = true;
-            } else {
-                bw.write(linea);
-                bw.newLine();
-            }
-        }
-        
-        if (!usuarioEncontrado) {
-            escritor.println("Error: El usuario no fue encontrado.");
+        File archivo = new File("buzon_" + usuario + ".txt");
+        if (!archivo.exists()) {
+            escritor.println("No tienes buzón para borrar.");
             return;
         }
 
-    } catch (IOException e) {
-        escritor.println("Error al procesar la solicitud de borrado del usuario.");
-        return;
-    }
-
-    // reescribe el archivo original
-    if (!archivoUsuarios.delete()) {
-        escritor.println("Error al borrar el archivo de usuarios original.");
-        return;
-    }
-    if (!archivoTemp.renameTo(archivoUsuarios)) {
-        escritor.println("Error al renombrar el archivo temporal.");
-        return;
-    }
-
-    // borra el buzón del usuario
-    File archivoBuzon = new File("buzon_" + usuario + ".txt");
-    if (archivoBuzon.exists()) {
-        if (archivoBuzon.delete()) {
-            System.out.println("Buzón de " + usuario + " borrado.");
+        if (archivo.delete()) {
+            escritor.println("Buzón borrado exitosamente.");
         } else {
-            System.out.println("Error al borrar el buzón de " + usuario + ".");
+            escritor.println("Error al borrar el buzón.");
         }
     }
 
-    escritor.println("Cuenta de usuario y buzón borrados exitosamente.");
-}
+    /**
+     * Permite a un usuario borrar un mensaje específico que envió a otro usuario.
+     * @param usuarioActual El nombre de usuario que está realizando la acción.
+     * @param usuarioObjetivo El nombre de usuario cuyo buzón contiene el mensaje a borrar.
+     * @param lector El BufferedReader para leer la selección del cliente.
+     * @param escritor El PrintWriter para enviar mensajes al cliente.
+     * @throws IOException Si ocurre un error de entrada/salida.
+     */
+    private static void borrarMensaje(String usuarioActual, String usuarioObjetivo, BufferedReader lector, PrintWriter escritor) throws IOException {
+        File archivoBuzon = new File("buzon_" + usuarioObjetivo + ".txt");
+        if (!archivoBuzon.exists()) {
+            escritor.println("El usuario " + usuarioObjetivo + " no tiene buzón.");
+            return;
+        }
 
+        List<String> listaMensajes = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(archivoBuzon))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                listaMensajes.add(linea);
+            }
+        }
+
+        List<Integer> indicesMensajesRemitente = new ArrayList<>();
+        for (int i = 0; i < listaMensajes.size(); i++) {
+            String mensaje = listaMensajes.get(i);
+            if (mensaje.startsWith("[" + usuarioActual + "]:")) {
+                indicesMensajesRemitente.add(i);
+            }
+        }
+
+        if (indicesMensajesRemitente.isEmpty()) {
+            escritor.println("No tienes mensajes enviados a " + usuarioObjetivo);
+            return;
+        }
+
+        escritor.println("=== Mensajes enviados a " + usuarioObjetivo + " ===");
+        for (int i = 0; i < indicesMensajesRemitente.size(); i++) {
+            escritor.println((i + 1) + ". " + listaMensajes.get(indicesMensajesRemitente.get(i)));
+        }
+        escritor.println("0. Salir");
+        escritor.println("FIN_MENSAJES");
+
+        String opcionSeleccionada = lector.readLine();
+        if (opcionSeleccionada == null || opcionSeleccionada.equals("0")) {
+            escritor.println("Regresando al menú principal...");
+        } else {
+            try {
+                int numeroMensaje = Integer.parseInt(opcionSeleccionada);
+                if (numeroMensaje >= 1 && numeroMensaje <= indicesMensajesRemitente.size()) {
+                    int indiceABorrar = indicesMensajesRemitente.get(numeroMensaje - 1);
+                    listaMensajes.remove(indiceABorrar);
+
+                    try (PrintWriter escritorArchivo = new PrintWriter(new FileWriter(archivoBuzon))) {
+                        for (String msg : listaMensajes) escritorArchivo.println(msg);
+                    }
+                    escritor.println("Mensaje borrado con éxito.");
+                } else {
+                    escritor.println("Número inválido.");
+                }
+            } catch (NumberFormatException e) {
+                escritor.println("Entrada inválida, escribe un número.");
+            }
+        }
+    }
+
+    /**
+     * Borra un usuario del sistema, incluyendo su entrada en el archivo de usuarios y su buzón.
+     * @param usuario El nombre de usuario a borrar.
+     * @param escritor El PrintWriter para enviar mensajes al cliente.
+     */
+    private static void borrarUsuario(String usuario, PrintWriter escritor) {
+        File archivoUsuarios = new File(ARCHIVO_USUARIOS);
+        File archivoTemporal = new File("temp_usuarios.txt");
+
+        boolean usuarioEncontrado = false;
+        try (BufferedReader br = new BufferedReader(new FileReader(archivoUsuarios));
+             BufferedWriter bw = new BufferedWriter(new FileWriter(archivoTemporal))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] partes = linea.split("\\|");
+                if (partes.length >= 2 && partes[1].equalsIgnoreCase(usuario)) {
+                    usuarioEncontrado = true;
+                } else {
+                    bw.write(linea);
+                    bw.newLine();
+                }
+            }
+        } catch (IOException e) {
+            escritor.println("Error al procesar la solicitud de borrado del usuario.");
+            archivoTemporal.delete();
+            return;
+        }
+
+        if (!usuarioEncontrado) {
+            escritor.println("Error: El usuario no fue encontrado.");
+            archivoTemporal.delete();
+            return;
+        }
+
+        if (!archivoUsuarios.delete()) {
+            escritor.println("Error al borrar el archivo de usuarios original.");
+            archivoTemporal.delete();
+            return;
+        }
+        if (!archivoTemporal.renameTo(archivoUsuarios)) {
+            escritor.println("Error al renombrar el archivo temporal.");
+            return;
+        }
+
+        File archivoBuzon = new File("buzon_" + usuario + ".txt");
+        if (archivoBuzon.exists()) {
+            if (archivoBuzon.delete()) {
+                System.out.println("Buzón de " + usuario + " borrado.");
+            } else {
+                System.out.println("Error al borrar el buzón de " + usuario + ".");
+            }
+        }
+
+        escritor.println("Cuenta de usuario y buzón borrados exitosamente.");
+    }
 }
 
 
