@@ -1,8 +1,3 @@
-/**
- *
- * @author Jorge Emilio
- */
-
 package com.cliente;
 
 import java.io.*;
@@ -302,4 +297,256 @@ public class Cliente2025 {
                                     if (inicioArchivo && contenidoDescargado.length() > 0) {
                                         guardarArchivoLocal(DIRECTORIO_CLIENTE_DESCARGAS, nombreArchivoSeleccionado, contenidoDescargado.toString());
                                         System.out.println("Archivo '" + nombreArchivoSeleccionado + "' descargado exitosamente en '" + DIRECTORIO_CLIENTE_DESCARGAS + "'.");
+                                    } else if (!inicioArchivo) {
+                                        System.out.println("No se pudo descargar el archivo o el servidor reportó un error.");
+                                    } else {
+                                        System.out.println("El archivo '" + nombreArchivoSeleccionado + "' está vacío o no se recibió contenido.");
+                                    }
+                                } else {
+                                    System.out.println("Regresando al menú principal...");
+                                }
+                            } else if (!errorDocumentos && documentosCompartidos.isEmpty()) {
+                                System.out.println("No hay documentos compartidos por '" + usuarioObjetivoCompartidos + "'.");
+                            }
+                            break;
+                        default:
+                            System.out.println("Opción no válida. Intente de nuevo.");
+                    }
+                }
+            }
 
+        } catch (IOException e) {
+            System.out.println("No se pudo conectar al servidor: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Muestra una lista de elementos con paginación y permite la navegación.
+     * Si la lista representa mensajes numerados para borrar, permite seleccionar uno.
+     * Si el tipo de acción es "descargar", permite seleccionar un archivo para descargar.
+     *
+     * @param elementos La lista de cadenas a mostrar.
+     * @param teclado El BufferedReader para leer la entrada del usuario.
+     * @param esSeleccionable Indica si los elementos son seleccionables (para borrar o descargar).
+     * @param tipoAccion Puede ser "borrar" o "descargar", o null si no es seleccionable.
+     * @param usuarioObjetivo Para el caso de descarga, el usuario que compartió el archivo.
+     * @return La opción seleccionada (número de mensaje/documento como String) si `esSeleccionable` es true y se selecciona un elemento,
+     *         "0" si se elige salir de una lista seleccionable, o `null` si se navega o se sale de una lista no seleccionable.
+     * @throws IOException Si ocurre un error de entrada/salida.
+     */
+    private static String mostrarYNavegarPaginas(List<String> elementos, BufferedReader teclado, boolean esSeleccionable, String tipoAccion, String usuarioObjetivo) throws IOException {
+        int paginaActual = 0;
+        String seleccionUsuario = null;
+
+        if (elementos.isEmpty()) {
+            System.out.println("No hay elementos para mostrar.");
+            return null;
+        }
+
+        while (true) {
+            int inicio = paginaActual * ELEMENTOS_POR_PAGINA;
+            int fin = Math.min(inicio + ELEMENTOS_POR_PAGINA, elementos.size());
+
+            System.out.println("\n--- Página " + (paginaActual + 1) + " de " + (int) Math.ceil((double) elementos.size() / ELEMENTOS_POR_PAGINA) + " ---");
+            for (int i = inicio; i < fin; i++) {
+                // Si es una lista de documentos compartidos, los numeramos para la selección
+                if (tipoAccion != null && tipoAccion.equals("descargar")) {
+                    System.out.println((i + 1) + ". " + elementos.get(i));
+                } else {
+                    System.out.println(elementos.get(i));
+                }
+            }
+            System.out.println("--------------------------------------------------");
+
+            System.out.print("(A) Anterior, (S) Siguiente, (X) Salir");
+            if (esSeleccionable) {
+                if ("borrar".equals(tipoAccion)) {
+                    System.out.print(", (Número) para borrar mensaje: ");
+                } else if ("descargar".equals(tipoAccion)) {
+                    System.out.print(", (Número) para descargar documento: ");
+                } else { // Caso genérico seleccionable (ej. borrar mensaje sin tipoAccion específico)
+                    System.out.print(", (Número) para seleccionar: ");
+                }
+            } else {
+                System.out.print(": ");
+            }
+
+            String opcion = teclado.readLine().trim().toLowerCase();
+
+            if (opcion.equals("s")) {
+                if (fin < elementos.size()) {
+                    paginaActual++;
+                } else {
+                    System.out.println("Ya estás en la última página.");
+                }
+            } else if (opcion.equals("a")) {
+                if (paginaActual > 0) {
+                    paginaActual--;
+                } else {
+                    System.out.println("Ya estás en la primera página.");
+                }
+            } else if (opcion.equals("x")) {
+                if (esSeleccionable) {
+                    seleccionUsuario = "0"; // Indicar salida para el contexto de selección
+                }
+                break;
+            } else if (esSeleccionable) {
+                try {
+                    int numeroSeleccionado = Integer.parseInt(opcion);
+                    if (numeroSeleccionado >= 1 && numeroSeleccionado <= elementos.size()) {
+                        if ("descargar".equals(tipoAccion)) {
+                            seleccionUsuario = elementos.get(numeroSeleccionado - 1); // Devolver el nombre del archivo
+                        } else {
+                            seleccionUsuario = opcion; // Devolver el número seleccionado como String (para borrar mensajes)
+                        }
+                        break;
+                    } else {
+                        System.out.println("Número inválido.");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Opción no válida. Ingrese 'A', 'S', 'X' o el número de un elemento.");
+                }
+            } else {
+                System.out.println("Opción no válida. Ingrese 'A', 'S' o 'X'.");
+            }
+        }
+        return seleccionUsuario;
+    }
+
+    /**
+     * Guarda una copia local del buzón de mensajes de un usuario.
+     * El archivo se guarda como "buzon_local_[usuario].txt" en el directorio de ejecución del cliente.
+     *
+     * @param usuario El nombre de usuario.
+     * @param mensajes La lista de mensajes a guardar.
+     */
+    private static void guardarBuzonLocal(String usuario, List<String> mensajes) {
+        String nombreArchivo = "buzon_local_" + usuario + ".txt";
+        try (PrintWriter pw = new PrintWriter(new FileWriter(nombreArchivo))) {
+            if (mensajes.isEmpty() || (mensajes.size() == 1 && mensajes.get(0).equals("No tienes mensajes en tu buzón."))) {
+                pw.println("No tienes mensajes en tu buzón.");
+            } else {
+                for (String mensaje : mensajes) {
+                    pw.println(mensaje);
+                }
+            }
+            System.out.println("Copia local del buzón guardada en: " + nombreArchivo);
+        } catch (IOException e) {
+            System.out.println("Error al guardar el buzón local: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Guarda una copia local de un mensaje enviado por un usuario.
+     * El mensaje se añade al archivo "mensajes_enviados_local_[remitente].txt" en el directorio de ejecución del cliente.
+     *
+     * @param remitente El nombre de usuario que envía el mensaje.
+     * @param destinatario El nombre de usuario del destinatario.
+     * @param mensaje El contenido del mensaje enviado.
+     */
+    private static void guardarMensajeEnviadoLocal(String remitente, String destinatario, String mensaje) {
+        String nombreArchivo = "mensajes_enviados_local_" + remitente + ".txt";
+        try (FileWriter fw = new FileWriter(nombreArchivo, true);
+             BufferedWriter bw = new BufferedWriter(fw)) {
+            bw.write("Para [" + destinatario + "]: " + mensaje);
+            bw.newLine();
+            System.out.println("Copia local del mensaje enviado guardada en: " + nombreArchivo);
+        } catch (IOException e) {
+            System.out.println("Error al guardar el mensaje enviado localmente: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Borra un archivo local específico.
+     *
+     * @param nombreArchivo El nombre del archivo a borrar.
+     */
+    private static void borrarArchivoLocal(String nombreArchivo) {
+        File archivo = new File(nombreArchivo);
+        if (archivo.exists()) {
+            if (archivo.delete()) {
+                System.out.println("Archivo local borrado: " + nombreArchivo);
+            } else {
+                System.out.println("Error al borrar el archivo local: " + nombreArchivo);
+            }
+        }
+    }
+
+    /**
+     * Sube automáticamente los archivos .txt del directorio de compartidos del cliente al servidor.
+     *
+     * @param usuarioActual El nombre de usuario actual.
+     * @param escritor El PrintWriter para enviar datos al servidor.
+     * @param lector El BufferedReader para leer respuestas del servidor.
+     * @throws IOException Si ocurre un error de entrada/salida.
+     */
+    private static void subirArchivosCompartidos(String usuarioActual, PrintWriter escritor, BufferedReader lector) throws IOException {
+        Path rutaDirectorioCompartidos = Paths.get(DIRECTORIO_CLIENTE_COMPARTIDOS);
+        if (!Files.exists(rutaDirectorioCompartidos) || !Files.isDirectory(rutaDirectorioCompartidos)) {
+            System.out.println("El directorio de archivos compartidos local '" + DIRECTORIO_CLIENTE_COMPARTIDOS + "' no existe o no es un directorio.");
+            return;
+        }
+
+        try (Stream<Path> stream = Files.list(rutaDirectorioCompartidos)) {
+            List<Path> archivosTxt = stream
+                .filter(Files::isRegularFile)
+                .filter(p -> p.toString().toLowerCase().endsWith(".txt"))
+                .collect(Collectors.toList());
+
+            if (archivosTxt.isEmpty()) {
+                System.out.println("No hay archivos .txt para compartir en '" + DIRECTORIO_CLIENTE_COMPARTIDOS + "'.");
+                return;
+            }
+
+            System.out.println("Subiendo archivos compartidos desde '" + DIRECTORIO_CLIENTE_COMPARTIDOS + "'...");
+            for (Path archivo : archivosTxt) {
+                String nombreArchivo = archivo.getFileName().toString();
+                String contenido = Files.readString(archivo);
+
+                escritor.println("CompartirDocumentos");
+                escritor.println(usuarioActual);
+                escritor.println(nombreArchivo);
+                escritor.println(contenido);
+                escritor.println("FIN_ARCHIVO"); // Marcador de fin de archivo
+
+                String respuestaServidor = lector.readLine();
+                System.out.println("Servidor: " + respuestaServidor);
+            }
+            System.out.println("Proceso de subida de archivos compartidos finalizado.");
+
+        } catch (IOException e) {
+            System.out.println("Error al subir archivos compartidos: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Crea un directorio si no existe.
+     * @param nombreDirectorio El nombre del directorio a crear.
+     */
+    private static void crearDirectorioSiNoExiste(String nombreDirectorio) {
+        Path ruta = Paths.get(nombreDirectorio);
+        if (!Files.exists(ruta)) {
+            try {
+                Files.createDirectories(ruta);
+                System.out.println("Directorio creado: " + nombreDirectorio);
+            } catch (IOException e) {
+                System.out.println("Error al crear el directorio '" + nombreDirectorio + "': " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Guarda contenido en un archivo local dentro de un directorio específico.
+     * @param directorio El directorio donde se guardará el archivo.
+     * @param nombreArchivo El nombre del archivo.
+     * @param contenido El contenido a guardar.
+     */
+    private static void guardarArchivoLocal(String directorio, String nombreArchivo, String contenido) {
+        Path rutaArchivo = Paths.get(directorio, nombreArchivo);
+        try {
+            Files.writeString(rutaArchivo, contenido);
+        } catch (IOException e) {
+            System.out.println("Error al guardar el archivo local '" + nombreArchivo + "': " + e.getMessage());
+        }
+    }
+}
