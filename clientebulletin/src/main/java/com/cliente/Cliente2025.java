@@ -308,4 +308,9 @@ public class Cliente2025 {
                 }
             } else {
                 System.out.println("Opción no válida. Ingrese 'A', 'S' o 'X'.");
+            }
+        }
+        return seleccionUsuario;
+    }
+}
 
