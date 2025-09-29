@@ -248,7 +248,8 @@ public class Cliente2025 {
                         case "8":
                             // Nueva opción: Ver/Descargar documentos de otro usuario
                             System.out.print("Ingrese el nombre del usuario del que desea ver los documentos compartidos: ");
-                            String usuarioObjetivoCompartidos = teclado.readLine();
+                            String usuarioObjetivoCompartidosInput = teclado.readLine();
+                            String usuarioObjetivoCompartidos = usuarioObjetivoCompartidosInput.toLowerCase();
 
                             escritor.println("VerDocumentosCompartidos");
                             escritor.println(usuarioObjetivoCompartidos);
@@ -258,12 +259,11 @@ public class Cliente2025 {
 
                             if (primeraRespuesta == null) {
                                 System.out.println("Error: No se recibió respuesta del servidor.");
-                            } else if (primeraRespuesta.startsWith("El usuario")) { // El servidor envió un mensaje de error
-                                System.out.println(primeraRespuesta); // Imprimir el mensaje de error
-                                // Consumir el marcador FIN_DOCUMENTOS_COMPARTIDOS que el servidor enviará
+                            } else if (primeraRespuesta.startsWith("El usuario")) {
+                                System.out.println(primeraRespuesta); 
                                 String lineaConsumo;
                                 while ((lineaConsumo = lector.readLine()) != null && !lineaConsumo.equals("FIN_DOCUMENTOS_COMPARTIDOS")) {
-                                    // Solo consumir líneas inesperadas hasta el terminador
+                                
                                 }
                             } else if (primeraRespuesta.startsWith("Documentos compartidos por")) { // El servidor envió un encabezado de lista
                                 System.out.println(primeraRespuesta); // Imprimir el encabezado
@@ -273,7 +273,7 @@ public class Cliente2025 {
                                     if (lineaDocumento.startsWith("- ")) { // Formato del servidor: "- nombre_archivo.txt"
                                         documentosCompartidos.add(lineaDocumento.substring(2)); // Quitar "- "
                                     }
-                                    // Otras líneas (si las hay) se ignoran, asumiendo que son parte del encabezado o inesperadas
+                                    // Otras líneas se ignoran, asumiendo que son parte del encabezado o inesperadas
                                 }
 
                                 // Proceder con la paginación si se encontraron documentos
@@ -319,10 +319,8 @@ public class Cliente2025 {
                                 }
                             } else {
                                 System.out.println("Respuesta inesperada del servidor al intentar ver documentos compartidos: " + primeraRespuesta);
-                                // Intentar consumir el FIN_DOCUMENTOS_COMPARTIDOS si eventualmente llega
                                 String lineaConsumo;
                                 while ((lineaConsumo = lector.readLine()) != null && !lineaConsumo.equals("FIN_DOCUMENTOS_COMPARTIDOS")) {
-                                    // Solo consumir
                                 }
                             }
                             break;
