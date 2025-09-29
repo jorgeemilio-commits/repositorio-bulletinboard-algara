@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -516,8 +515,12 @@ public class Servidor2025 {
         Path rutaArchivo = Paths.get(DIRECTORIO_COMPARTIDOS_SERVIDOR, usuarioRemitente + "_" + nombreArchivo);
         try {
             Files.writeString(rutaArchivo, contenido);
-            archivosCompartidosPorUsuario.computeIfAbsent(usuarioRemitente, k -> new ArrayList<>()).add(nombreArchivo);
-            System.out.println("Archivo '" + nombreArchivo + "' compartido por '" + usuarioRemitente + "' guardado en el servidor.");
+            // Asegurarse de que el nombre del archivo sea único en la lista por usuario
+            List<String> listaArchivos = archivosCompartidosPorUsuario.computeIfAbsent(usuarioRemitente, k -> new ArrayList<>());
+            if (!listaArchivos.contains(nombreArchivo)) {
+                listaArchivos.add(nombreArchivo);
+            }
+            System.out.println("Archivo '" + nombreArchivo + "' compartido por '" + usuarioRemitente + "' guardado/actualizado en el servidor.");
         } catch (IOException e) {
             System.out.println("Error al guardar el archivo compartido '" + nombreArchivo + "': " + e.getMessage());
         }
@@ -566,10 +569,11 @@ public class Servidor2025 {
                     if (indiceGuionBajo > 0) {
                         String usuario = nombreCompleto.substring(0, indiceGuionBajo);
                         String nombreOriginalArchivo = nombreCompleto.substring(indiceGuionBajo + 1);
+                        // Asegurarse de que el nombre del archivo sea único en la lista por usuario
                         archivosCompartidosPorUsuario.computeIfAbsent(usuario, k -> new ArrayList<>()).add(nombreOriginalArchivo);
                     }
                 });
-                System.out.println("Archivos compartidos cargados al inicio: " + archivosCompartidosPorUsuario.size() + " archivos de " + archivosCompartidosPorUsuario.keySet().size() + " usuarios.");
+                System.out.println("Archivos compartidos cargados al inicio: " + archivosCompartidosPorUsuario.values().stream().mapToLong(List::size).sum() + " archivos de " + archivosCompartidosPorUsuario.keySet().size() + " usuarios.");
             } catch (IOException e) {
                 System.out.println("Error al cargar archivos compartidos al inicio: " + e.getMessage());
             }

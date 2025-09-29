@@ -13,8 +13,10 @@ import java.util.stream.Stream;
 public class Cliente2025 {
 
     private static final int ELEMENTOS_POR_PAGINA = 10; // Constante para definir cuántos elementos se muestran por página
-    private static final String DIRECTORIO_CLIENTE_COMPARTIDOS = "cliente_archivos_compartidos";
-    private static final String DIRECTORIO_CLIENTE_DESCARGAS = "cliente_descargas";
+    // Ajuste de la ruta relativa: asume que el cliente se ejecuta desde el directorio 'clientebulletin'
+    // y que 'cliente_archivos_compartidos' está en el directorio padre (repositorio-bulletinboard-algara)
+    private static final String DIRECTORIO_CLIENTE_COMPARTIDOS = "../cliente_archivos_compartidos";
+    private static final String DIRECTORIO_CLIENTE_DESCARGAS = "../cliente_descargas";
 
     /**
      * Punto de entrada principal para la aplicación cliente.
@@ -207,7 +209,8 @@ public class Cliente2025 {
                             }
 
                             if (!errorOcurrio && !mensajesParaBorrar.isEmpty()) {
-                                String seleccionMensaje = mostrarYNavegarPaginas(mensajesParaBorrar, teclado, true, null, null); // Es seleccionable
+                                // Pasar "borrar" explícitamente para el tipo de acción
+                                String seleccionMensaje = mostrarYNavegarPaginas(mensajesParaBorrar, teclado, true, "borrar", null);
                                 if (seleccionMensaje != null && !seleccionMensaje.equals("0")) { // Si se seleccionó un mensaje
                                     escritor.println(seleccionMensaje); // Enviar el número seleccionado al servidor
                                     String resultadoOperacion = lector.readLine();
@@ -251,62 +254,76 @@ public class Cliente2025 {
                             escritor.println(usuarioObjetivoCompartidos);
 
                             List<String> documentosCompartidos = new ArrayList<>();
-                            String lineaDocumento;
-                            boolean errorDocumentos = false;
-                            while ((lineaDocumento = lector.readLine()) != null) {
-                                if (lineaDocumento.equals("FIN_DOCUMENTOS_COMPARTIDOS")) break;
-                                if (lineaDocumento.startsWith("El usuario")) { // Mensaje de error del servidor
-                                    System.out.println(lineaDocumento);
-                                    errorDocumentos = true;
-                                    break;
-                                }
-                                // Solo añadir las líneas de documento numeradas a la lista para paginar
-                                if (lineaDocumento.startsWith("- ")) { // Formato del servidor: "- nombre_archivo.txt"
-                                    documentosCompartidos.add(lineaDocumento.substring(2)); // Quitar "- "
-                                } else {
-                                    System.out.println(lineaDocumento); // Imprimir encabezados del servidor
-                                }
-                            }
+                            String primeraRespuesta = lector.readLine(); // Leer la primera línea de respuesta del servidor
 
-                            if (!errorDocumentos && !documentosCompartidos.isEmpty()) {
-                                String nombreArchivoSeleccionado = mostrarYNavegarPaginas(documentosCompartidos, teclado, true, "descargar", usuarioObjetivoCompartidos);
-                                if (nombreArchivoSeleccionado != null && !nombreArchivoSeleccionado.equals("0")) {
-                                    // El usuario seleccionó un archivo para descargar
-                                    escritor.println("DescargarDocumento");
-                                    escritor.println(usuarioObjetivoCompartidos); // Usuario que compartió
-                                    escritor.println(nombreArchivoSeleccionado); // Nombre del archivo
+                            if (primeraRespuesta == null) {
+                                System.out.println("Error: No se recibió respuesta del servidor.");
+                            } else if (primeraRespuesta.startsWith("El usuario")) { // El servidor envió un mensaje de error
+                                System.out.println(primeraRespuesta); // Imprimir el mensaje de error
+                                // Consumir el marcador FIN_DOCUMENTOS_COMPARTIDOS que el servidor enviará
+                                String lineaConsumo;
+                                while ((lineaConsumo = lector.readLine()) != null && !lineaConsumo.equals("FIN_DOCUMENTOS_COMPARTIDOS")) {
+                                    // Solo consumir líneas inesperadas hasta el terminador
+                                }
+                            } else if (primeraRespuesta.startsWith("Documentos compartidos por")) { // El servidor envió un encabezado de lista
+                                System.out.println(primeraRespuesta); // Imprimir el encabezado
+                                String lineaDocumento;
+                                while ((lineaDocumento = lector.readLine()) != null) {
+                                    if (lineaDocumento.equals("FIN_DOCUMENTOS_COMPARTIDOS")) break;
+                                    if (lineaDocumento.startsWith("- ")) { // Formato del servidor: "- nombre_archivo.txt"
+                                        documentosCompartidos.add(lineaDocumento.substring(2)); // Quitar "- "
+                                    }
+                                    // Otras líneas (si las hay) se ignoran, asumiendo que son parte del encabezado o inesperadas
+                                }
 
-                                    StringBuilder contenidoDescargado = new StringBuilder();
-                                    String lineaArchivo;
-                                    boolean inicioArchivo = false;
-                                    while ((lineaArchivo = lector.readLine()) != null) {
-                                        if (lineaArchivo.equals("INICIO_ARCHIVO")) {
-                                            inicioArchivo = true;
-                                            continue;
+                                // Proceder con la paginación si se encontraron documentos
+                                if (!documentosCompartidos.isEmpty()) {
+                                    String nombreArchivoSeleccionado = mostrarYNavegarPaginas(documentosCompartidos, teclado, true, "descargar", usuarioObjetivoCompartidos);
+                                    if (nombreArchivoSeleccionado != null && !nombreArchivoSeleccionado.equals("0")) {
+                                        // El usuario seleccionó un archivo para descargar
+                                        escritor.println("DescargarDocumento");
+                                        escritor.println(usuarioObjetivoCompartidos); // Usuario que compartió
+                                        escritor.println(nombreArchivoSeleccionado); // Nombre del archivo
+
+                                        StringBuilder contenidoDescargado = new StringBuilder();
+                                        String lineaArchivo;
+                                        boolean inicioArchivo = false;
+                                        while ((lineaArchivo = lector.readLine()) != null) {
+                                            if (lineaArchivo.equals("INICIO_ARCHIVO")) {
+                                                inicioArchivo = true;
+                                                continue;
+                                            }
+                                            if (lineaArchivo.equals("FIN_ARCHIVO")) {
+                                                break;
+                                            }
+                                            if (inicioArchivo) {
+                                                contenidoDescargado.append(lineaArchivo).append(System.lineSeparator());
+                                            } else {
+                                                System.out.println(lineaArchivo); // Mensajes de error del servidor antes de INICIO_ARCHIVO
+                                            }
                                         }
-                                        if (lineaArchivo.equals("FIN_ARCHIVO")) {
-                                            break;
-                                        }
-                                        if (inicioArchivo) {
-                                            contenidoDescargado.append(lineaArchivo).append(System.lineSeparator());
+
+                                        if (inicioArchivo && contenidoDescargado.length() > 0) {
+                                            guardarArchivoLocal(DIRECTORIO_CLIENTE_DESCARGAS, nombreArchivoSeleccionado, contenidoDescargado.toString());
+                                            System.out.println("Archivo '" + nombreArchivoSeleccionado + "' descargado exitosamente en '" + DIRECTORIO_CLIENTE_DESCARGAS + "'.");
+                                        } else if (!inicioArchivo) {
+                                            System.out.println("No se pudo descargar el archivo o el servidor reportó un error.");
                                         } else {
-                                            System.out.println(lineaArchivo); // Mensajes de error del servidor antes de INICIO_ARCHIVO
+                                            System.out.println("El archivo '" + nombreArchivoSeleccionado + "' está vacío o no se recibió contenido.");
                                         }
-                                    }
-
-                                    if (inicioArchivo && contenidoDescargado.length() > 0) {
-                                        guardarArchivoLocal(DIRECTORIO_CLIENTE_DESCARGAS, nombreArchivoSeleccionado, contenidoDescargado.toString());
-                                        System.out.println("Archivo '" + nombreArchivoSeleccionado + "' descargado exitosamente en '" + DIRECTORIO_CLIENTE_DESCARGAS + "'.");
-                                    } else if (!inicioArchivo) {
-                                        System.out.println("No se pudo descargar el archivo o el servidor reportó un error.");
                                     } else {
-                                        System.out.println("El archivo '" + nombreArchivoSeleccionado + "' está vacío o no se recibió contenido.");
+                                        System.out.println("Regresando al menú principal...");
                                     }
                                 } else {
-                                    System.out.println("Regresando al menú principal...");
+                                    System.out.println("No hay documentos compartidos por '" + usuarioObjetivoCompartidos + "'.");
                                 }
-                            } else if (!errorDocumentos && documentosCompartidos.isEmpty()) {
-                                System.out.println("No hay documentos compartidos por '" + usuarioObjetivoCompartidos + "'.");
+                            } else {
+                                System.out.println("Respuesta inesperada del servidor al intentar ver documentos compartidos: " + primeraRespuesta);
+                                // Intentar consumir el FIN_DOCUMENTOS_COMPARTIDOS si eventualmente llega
+                                String lineaConsumo;
+                                while ((lineaConsumo = lector.readLine()) != null && !lineaConsumo.equals("FIN_DOCUMENTOS_COMPARTIDOS")) {
+                                    // Solo consumir
+                                }
                             }
                             break;
                         default:
@@ -422,18 +439,17 @@ public class Cliente2025 {
      */
     private static void guardarBuzonLocal(String usuario, List<String> mensajes) {
         String nombreArchivo = "buzon_local_" + usuario + ".txt";
-        try (PrintWriter pw = new PrintWriter(new FileWriter(nombreArchivo))) {
-            if (mensajes.isEmpty() || (mensajes.size() == 1 && mensajes.get(0).equals("No tienes mensajes en tu buzón."))) {
-                pw.println("No tienes mensajes en tu buzón.");
-            } else {
-                for (String mensaje : mensajes) {
-                    pw.println(mensaje);
-                }
+        StringBuilder contenido = new StringBuilder();
+        if (mensajes.isEmpty() || (mensajes.size() == 1 && mensajes.get(0).equals("No tienes mensajes en tu buzón."))) {
+            contenido.append("No tienes mensajes en tu buzón.");
+        } else {
+            for (String mensaje : mensajes) {
+                contenido.append(mensaje).append(System.lineSeparator());
             }
-            System.out.println("Copia local del buzón guardada en: " + nombreArchivo);
-        } catch (IOException e) {
-            System.out.println("Error al guardar el buzón local: " + e.getMessage());
         }
+        // Usar el método existente para guardar en el directorio de archivos compartidos
+        guardarArchivoLocal(DIRECTORIO_CLIENTE_COMPARTIDOS, nombreArchivo, contenido.toString());
+        System.out.println("Copia local del buzón guardada en: " + DIRECTORIO_CLIENTE_COMPARTIDOS + File.separator + nombreArchivo);
     }
 
     /**
@@ -483,6 +499,7 @@ public class Cliente2025 {
     private static void subirArchivosCompartidos(String usuarioActual, PrintWriter escritor, BufferedReader lector) throws IOException {
         Path rutaDirectorioCompartidos = Paths.get(DIRECTORIO_CLIENTE_COMPARTIDOS);
         if (!Files.exists(rutaDirectorioCompartidos) || !Files.isDirectory(rutaDirectorioCompartidos)) {
+            // Corregido el error tipográfico aquí
             System.out.println("El directorio de archivos compartidos local '" + DIRECTORIO_CLIENTE_COMPARTIDOS + "' no existe o no es un directorio.");
             return;
         }
@@ -501,12 +518,18 @@ public class Cliente2025 {
             System.out.println("Subiendo archivos compartidos desde '" + DIRECTORIO_CLIENTE_COMPARTIDOS + "'...");
             for (Path archivo : archivosTxt) {
                 String nombreArchivo = archivo.getFileName().toString();
-                String contenido = Files.readString(archivo);
 
                 escritor.println("CompartirDocumentos");
                 escritor.println(usuarioActual);
                 escritor.println(nombreArchivo);
-                escritor.println(contenido);
+
+                // Leer el archivo línea por línea y enviar cada línea individualmente
+                try (BufferedReader fileReader = new BufferedReader(new FileReader(archivo.toFile()))) {
+                    String fileLine;
+                    while ((fileLine = fileReader.readLine()) != null) {
+                        escritor.println(fileLine);
+                    }
+                }
                 escritor.println("FIN_ARCHIVO"); // Marcador de fin de archivo
 
                 String respuestaServidor = lector.readLine();
