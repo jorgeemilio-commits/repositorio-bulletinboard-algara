@@ -139,6 +139,7 @@ public class Cliente2025 {
                                 listaMensajesBuzon.add(mensajeBuzon);
                             }
                             mostrarYNavegarPaginas(listaMensajesBuzon, teclado, false); // No es seleccionable
+                            guardarBuzonLocal(usuarioActual, listaMensajesBuzon); // Guardar copia local del buzón
                             break;
                         case "3":
                             // Opción para enviar un mensaje a otro usuario
@@ -151,6 +152,7 @@ public class Cliente2025 {
                             String mensajeAEnviar = teclado.readLine();
                             escritor.println(mensajeAEnviar); // Contenido del mensaje
                             System.out.println(lector.readLine());
+                            guardarMensajeEnviadoLocal(usuarioActual, destinatario, mensajeAEnviar); // Guardar copia local del mensaje enviado
                             break;
                         case "4":
                             // Opción para cerrar la sesión del usuario actual
@@ -163,6 +165,8 @@ public class Cliente2025 {
                             escritor.println("BorrarBuzon");
                             escritor.println(usuarioActual);
                             System.out.println(lector.readLine());
+                            // Opcional: Borrar el archivo de buzón local también
+                            borrarArchivoLocal("buzon_local_" + usuarioActual + ".txt");
                             break;
                         case "6":
                             // Opción para borrar un mensaje específico enviado por el usuario actual con paginación
@@ -199,6 +203,9 @@ public class Cliente2025 {
                                     escritor.println(seleccionMensaje); // Enviar el número seleccionado al servidor
                                     String resultadoOperacion = lector.readLine();
                                     System.out.println(resultadoOperacion);
+                                    // Opcional: Actualizar el archivo local de mensajes enviados si se borró uno
+                                    // Esto requeriría leer el archivo local, borrar la línea y reescribirlo.
+                                    // Por simplicidad, no se implementa aquí, ya que el servidor es la fuente de verdad.
                                 } else {
                                     escritor.println("0"); // El usuario eligió salir sin seleccionar
                                     String resultadoOperacion = lector.readLine(); // El servidor enviará "Regresando al menú principal..."
@@ -220,6 +227,9 @@ public class Cliente2025 {
                                 System.out.println(respuestaBorrado);
                                 if (respuestaBorrado.contains("exitosa")) {
                                     sesionIniciada = false;
+                                    // Opcional: Borrar los archivos locales del usuario
+                                    borrarArchivoLocal("buzon_local_" + usuarioActual + ".txt");
+                                    borrarArchivoLocal("mensajes_enviados_local_" + usuarioActual + ".txt");
                                     usuarioActual = "";
                                 }
                             } else {
@@ -311,6 +321,65 @@ public class Cliente2025 {
             }
         }
         return seleccionUsuario;
+    }
+
+    /**
+     * Guarda una copia local del buzón de mensajes de un usuario.
+     * El archivo se guarda como "buzon_local_[usuario].txt" en el directorio de ejecución del cliente.
+     *
+     * @param usuario El nombre de usuario.
+     * @param mensajes La lista de mensajes a guardar.
+     */
+    private static void guardarBuzonLocal(String usuario, List<String> mensajes) {
+        String nombreArchivo = "buzon_local_" + usuario + ".txt";
+        try (PrintWriter pw = new PrintWriter(new FileWriter(nombreArchivo))) {
+            if (mensajes.isEmpty() || (mensajes.size() == 1 && mensajes.get(0).equals("No tienes mensajes en tu buzón."))) {
+                pw.println("No tienes mensajes en tu buzón.");
+            } else {
+                for (String mensaje : mensajes) {
+                    pw.println(mensaje);
+                }
+            }
+            System.out.println("Copia local del buzón guardada en: " + nombreArchivo);
+        } catch (IOException e) {
+            System.out.println("Error al guardar el buzón local: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Guarda una copia local de un mensaje enviado por un usuario.
+     * El mensaje se añade al archivo "mensajes_enviados_local_[remitente].txt" en el directorio de ejecución del cliente.
+     *
+     * @param remitente El nombre de usuario que envía el mensaje.
+     * @param destinatario El nombre de usuario del destinatario.
+     * @param mensaje El contenido del mensaje enviado.
+     */
+    private static void guardarMensajeEnviadoLocal(String remitente, String destinatario, String mensaje) {
+        String nombreArchivo = "mensajes_enviados_local_" + remitente + ".txt";
+        try (FileWriter fw = new FileWriter(nombreArchivo, true);
+             BufferedWriter bw = new BufferedWriter(fw)) {
+            bw.write("Para [" + destinatario + "]: " + mensaje);
+            bw.newLine();
+            System.out.println("Copia local del mensaje enviado guardada en: " + nombreArchivo);
+        } catch (IOException e) {
+            System.out.println("Error al guardar el mensaje enviado localmente: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Borra un archivo local específico.
+     *
+     * @param nombreArchivo El nombre del archivo a borrar.
+     */
+    private static void borrarArchivoLocal(String nombreArchivo) {
+        File archivo = new File(nombreArchivo);
+        if (archivo.exists()) {
+            if (archivo.delete()) {
+                System.out.println("Archivo local borrado: " + nombreArchivo);
+            } else {
+                System.out.println("Error al borrar el archivo local: " + nombreArchivo);
+            }
+        }
     }
 }
 
